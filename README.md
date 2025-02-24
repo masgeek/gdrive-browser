@@ -11,7 +11,7 @@ This project is a Google Drive Browser built with PHP. It allows users to browse
 
 ## Requirements
 
-- PHP 8.3 or higher
+- PHP 8.1 or higher
 - Composer
 - Google API Client Library for PHP
 - Whoops error handling library
