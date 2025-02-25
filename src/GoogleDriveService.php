@@ -33,7 +33,60 @@ class GoogleDriveService
      * folder ID is not provided when creating an instance of the class. If `folderId` is not provided,
      * the default folder ID specified
      */
-    public function __construct(string $folderId = null)
+	/**
+	 * Constructor for GoogleDriveService using WordPress settings
+	 *
+	 * @param string $folderId Optional folder ID to override the default one
+	 *
+	 * @throws \Google\Exception
+	 */
+	public function __construct(string $folderId = null)
+	{
+		// Get WordPress options instead of using dotenv
+		$credentials_exist = file_exists(GDI_CREDENTIALS_FILE);
+		$service_account_email = get_option('gdi_service_account_email',null);
+		$default_folder_id = get_option('gdi_root_folder_id');
+		$app_name = 'WordPress Google Drive Integration';
+
+		// Check for required settings
+		if (!$credentials_exist) {
+			throw new \Exception('Google Drive credentials file not found');
+		}
+
+		if (empty($service_account_email)) {
+			throw new \Exception('Google service account email not configured');
+		}
+
+		if (empty($default_folder_id)) {
+			throw new \Exception('Google Drive root folder ID not configured');
+		}
+
+		// Use provided folder ID or default
+		$current_folder_id = ($folderId !== null) ? $folderId : $default_folder_id;
+
+		// Set up Google client
+		$this->client = new Google_Client();
+		$this->client->setApplicationName($app_name);
+		$this->client->setScopes(Google_Service_Drive::DRIVE_READONLY);
+
+		// Read and decrypt credentials
+		$encrypted = file_get_contents(GDI_CREDENTIALS_FILE);
+		$credentials_handler = new CredentialsHandler(GDI_CREDENTIALS_DIR, GDI_CREDENTIALS_FILE);
+		$credentials_json = $credentials_handler->decryptData($encrypted);
+
+		// Set auth from JSON
+		$this->client->setAuthConfig(json_decode($credentials_json, true));
+
+		// Set service account
+		if ($service_account_email) {
+			$this->client->setSubject($service_account_email);
+		}
+
+		$this->service = new Google_Service_Drive($this->client);
+		$this->currentFolderId = $current_folder_id;
+		$this->cacheService = new CacheService();
+	}
+    public function __construct_old(string $folderId = null)
     {
         $dotenv = Dotenv::createImmutable(dirname(__DIR__));
 
