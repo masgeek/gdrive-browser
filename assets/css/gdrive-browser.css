@@ -1,181 +1,114 @@
-jQuery(document).ready(function ($) {
-    // Handle folder click
-    $(document).on('click', '.gdrive-folder-link', function (e) {
-        e.preventDefault();
+.gdrive-browser-container {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    margin: 20px 0;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
 
-        var container = $(this).closest('.gdrive-browser-container');
-        var folderId = $(this).data('folder-id');
+.gdrive-browser-title {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
 
-        changeFolder(container, folderId);
-    });
+.gdrive-breadcrumbs {
+    margin-bottom: 15px;
+    background: #f7f7f7;
+    padding: 8px 12px;
+    border-radius: 3px;
+    font-size: 14px;
+}
 
-    // Handle breadcrumb click
-    $(document).on('click', '.gdrive-breadcrumb-link', function (e) {
-        e.preventDefault();
+.gdrive-breadcrumb-link {
+    color: #4285f4;
+    text-decoration: none;
+}
 
-        var container = $(this).closest('.gdrive-browser-container');
-        var folderId = $(this).data('folder-id');
+.gdrive-breadcrumb-link:hover {
+    text-decoration: underline;
+}
 
-        changeFolder(container, folderId);
-    });
+.gdrive-breadcrumb-current {
+    color: #555;
+    font-weight: 500;
+}
 
-    /**
-     * Change the current folder
-     *
-     * @param {jQuery} container The container element
-     * @param {string} folderId The folder ID to change to
-     */
-    function changeFolder(container, folderId) {
-        // Show loading indicator
-        container.find('.gdrive-loading').show();
-        container.find('.gdrive-files-container').addClass('gdrive-loading-active');
+.gdrive-loading {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+}
 
-        // Make AJAX request
-        $.ajax({
-            url: gdriveData.ajaxUrl,
-            type: 'POST',
-            data: {
-                action: 'gdrive_change_folder',
-                nonce: gdriveData.nonce,
-                folder_id: folderId
-            },
-            success: function (response) {
-                if (response.success) {
-                    // Update current folder
-                    container.attr('data-current-folder', response.data.current_folder);
+.gdrive-files-container.gdrive-loading-active {
+    opacity: 0.5;
+}
 
-                    // Update breadcrumbs
-                    updateBreadcrumbs(container, response.data.breadcrumbs);
+.gdrive-files-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
 
-                    // Update files list
-                    updateFilesList(container, response.data.files);
-                } else {
-                    showError(container, response.data.message);
-                }
-            },
-            error: function () {
-                showError(container, 'Error connecting to server');
-            },
-            complete: function () {
-                // Hide loading indicator
-                container.find('.gdrive-loading').hide();
-                container.find('.gdrive-files-container').removeClass('gdrive-loading-active');
-            }
-        });
-    }
+.gdrive-file-item {
+    padding: 10px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease-in-out;
+}
 
-    /**
-     * Update the breadcrumbs display
-     *
-     * @param {jQuery} container The container element
-     * @param {Array} breadcrumbs The breadcrumbs data
-     */
-    function updateBreadcrumbs(container, breadcrumbs) {
-        var breadcrumbsContainer = container.find('.gdrive-breadcrumbs');
+.gdrive-file-item:hover {
+    background-color: #f9f9f9;
+}
 
-        if (breadcrumbsContainer.length === 0 || !breadcrumbs || breadcrumbs.length === 0) {
-            return;
-        }
+.gdrive-file-item:last-child {
+    border-bottom: none;
+}
 
-        breadcrumbsContainer.empty();
+.gdrive-folder-link, .gdrive-file-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
 
-        var last = breadcrumbs.length - 1;
-        $.each(breadcrumbs, function (index, crumb) {
-            if (index === last) {
-                breadcrumbsContainer.append(
-                    $('<span>')
-                        .addClass('gdrive-breadcrumb-current')
-                        .text(crumb.name)
-                );
-            } else {
-                breadcrumbsContainer.append(
-                    $('<a>')
-                        .attr('href', '#')
-                        .addClass('gdrive-breadcrumb-link')
-                        .attr('data-folder-id', crumb.id)
-                        .text(crumb.name)
-                );
+.gdrive-folder-link {
+    color: #4285f4;
+}
 
-                breadcrumbsContainer.append(
-                    $('<span>')
-                        .addClass('gdrive-breadcrumb-separator')
-                        .html(' &gt; ')
-                );
-            }
-        });
-    }
+.gdrive-file-link {
+    color: #333;
+}
 
-    /**
-     * Update the files list
-     *
-     * @param {jQuery} container The container element
-     * @param {Array} files The files data
-     */
-    function updateFilesList(container, files) {
-        var filesContainer = container.find('.gdrive-files-container');
+.gdrive-folder-icon, .gdrive-file-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
 
-        if (files.length === 0) {
-            filesContainer.html('<p class="gdrive-empty-folder">No files found in this folder.</p>');
-            return;
-        }
+.gdrive-folder-icon {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%234285F4' d='M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z'/%3E%3C/svg%3E");
+}
 
-        // Sort files: folders first, then alphabetically
-        files.sort(function (a, b) {
-            var aIsFolder = a.mimeType === 'application/vnd.google-apps.folder';
-            var bIsFolder = b.mimeType === 'application/vnd.google-apps.folder';
+.gdrive-file-icon {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23757575' d='M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z'/%3E%3C/svg%3E");
+}
 
-            if (aIsFolder && !bIsFolder) return -1;
-            if (!aIsFolder && bIsFolder) return 1;
+.gdrive-empty-folder {
+    color: #666;
+    font-style: italic;
+    padding: 15px 0;
+    text-align: center;
+}
 
-            return a.name.localeCompare(b.name);
-        });
-
-        var filesList = $('<ul>').addClass('gdrive-files-list');
-
-        $.each(files, function (index, file) {
-            var isFolder = file.mimeType === 'application/vnd.google-apps.folder';
-            var fileItem = $('<li>').addClass('gdrive-file-item');
-
-            if (isFolder) {
-                fileItem.addClass('gdrive-folder');
-
-                var folderLink = $('<a>')
-                    .attr('href', '#')
-                    .addClass('gdrive-folder-link')
-                    .attr('data-folder-id', file.id);
-
-                folderLink.append($('<span>').addClass('gdrive-folder-icon'));
-                folderLink.append(document.createTextNode(file.name));
-
-                fileItem.append(folderLink);
-            } else {
-                fileItem.addClass('gdrive-file');
-
-                var fileLink = $('<a>')
-                    .attr('href', file.webViewLink)
-                    .attr('target', '_blank')
-                    .addClass('gdrive-file-link');
-
-                fileLink.append($('<span>').addClass('gdrive-file-icon'));
-                fileLink.append(document.createTextNode(file.name));
-
-                fileItem.append(fileLink);
-            }
-
-            filesList.append(fileItem);
-        });
-
-        filesContainer.empty().append(filesList);
-    }
-
-    /**
-     * Show an error message
-     *
-     * @param {jQuery} container The container element
-     * @param {string} message The error message
-     */
-    function showError(container, message) {
-        var filesContainer = container.find('.gdrive-files-container');
-        filesContainer.html('<div class="gdrive-error">' + message + '</div>');
-    }
-});
+.gdrive-error {
+    color: #d32f2f;
+    padding: 15px;
+    border: 1px solid #ffcdd2;
+    background-color: #ffebee;
+    border-radius: 4px;
+    margin: 10px 0;
+}
