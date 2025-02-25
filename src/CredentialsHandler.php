@@ -75,7 +75,7 @@ class CredentialsHandler {
 		}
 
 		// If the credentials include an email address, extract and save it
-		if ( isset( $decoded['client_email'] ) && ! empty( $decoded['client_email'] ) ) {
+		if ( ! empty( $decoded['client_email'] ) ) {
 			update_option( 'gdi_service_account_email', $decoded['client_email'] );
 		}
 
