@@ -30,44 +30,21 @@ require_once GDI_PLUGIN_PATH . 'vendor/autoload.php';
 use App\GoogleDriveIntegration;
 
 // Initialize the plugin
-function google_drive_integration_init() {
+add_action( 'plugins_loaded', 'google_drive_integration_init' );
+register_activation_hook( __FILE__, 'google_drive_integration_activate' );
+
+
+function google_drive_integration_init(): void {
 	GoogleDriveIntegration::get_instance();
 }
-
-add_action( 'plugins_loaded', 'google_drive_integration_init' );
 
 /**
  * Create necessary directories on plugin activation
  */
-function google_drive_integration_activate() {
+function google_drive_integration_activate(): void {
 	// Create cache directory if it doesn't exist
 	if ( ! file_exists( GDI_CACHE_DIR ) ) {
 		wp_mkdir_p( GDI_CACHE_DIR );
 	}
-
-	// Protect the cache directory
-	if ( ! file_exists( GDI_CACHE_DIR . '.htaccess' ) ) {
-		$htaccess_content = "# Prevent direct access to cache files\n";
-		$htaccess_content .= "<Files \"*\">\n";
-		$htaccess_content .= "  Require all denied\n";
-		$htaccess_content .= "</Files>\n";
-		file_put_contents( GDI_CACHE_DIR . '.htaccess', $htaccess_content );
-	}
-
-	// Create credentials directory
-	if ( ! file_exists( GDI_CREDENTIALS_DIR ) ) {
-		wp_mkdir_p( GDI_CREDENTIALS_DIR );
-
-		// Create .htaccess file to protect credentials
-		$htaccess_content = "# Prevent direct access to credentials\n";
-		$htaccess_content .= "<Files \"*\">\n";
-		$htaccess_content .= "  Require all denied\n";
-		$htaccess_content .= "</Files>\n";
-		file_put_contents( GDI_CREDENTIALS_DIR . '.htaccess', $htaccess_content );
-
-		// Create index.php to prevent directory listing
-		file_put_contents( GDI_CREDENTIALS_DIR . 'index.php', '<?php // Silence is golden' );
-	}
 }
 
-register_activation_hook( __FILE__, 'google_drive_integration_activate' );
