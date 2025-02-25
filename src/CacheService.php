@@ -2,81 +2,171 @@
 
 namespace App;
 
-require_once __DIR__ . '/../vendor/autoload.php'; //ensure this is still included, as it will not be included by index.php when using namespaces.
-
-
+use Psr\Cache\CacheItemPoolInterface;
 use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Component\Cache\Adapter\RedisAdapter;
+use Symfony\Component\Cache\Adapter\MemcachedAdapter;
 use Symfony\Contracts\Cache\ItemInterface;
 
-/* The `CacheService` class is a PHP class that provides caching functionality using Symfony's Cache
-component. It includes methods for storing data in the cache, retrieving data from the cache, and
-clearing data from the cache. The class uses a `FilesystemAdapter` to manage the caching operations
-and allows setting a time-to-live (TTL) for cached items. */
+/**
+ * CacheService with pluggable adapters
+ */
+class CacheService {
+	/**
+	 * @var CacheItemPoolInterface
+	 */
+	private CacheItemPoolInterface $cache;
 
-class CacheService
-{
-    private FilesystemAdapter $cache;
+	/**
+	 * @var int Default TTL in seconds (30 days)
+	 */
+	private int $defaultTtl = 2592000;
 
-    public function __construct()
-    {
-        $this->cache = new FilesystemAdapter('g-drive-cache', 2592000, __DIR__ . '/../cache');
-    }
+	/**
+	 * Constructor
+	 *
+	 * @param string $adapter Cache adapter type ('filesystem', 'array', 'redis', 'memcached')
+	 * @param array $options Adapter-specific options
+	 */
+	public function __construct( string $adapter = 'filesystem', array $options = [] ) {
+		// Set default TTL from WordPress if available
+		if ( function_exists( 'get_option' ) ) {
+			$this->defaultTtl = (int) get_option( 'gdi_cache_duration', $this->defaultTtl );
+		}
 
-    /**
-     * The store function stores data in a cache with an optional time-to-live value.
-     *
-     * @param string $key The `key` parameter in the `store` function is used to uniquely identify the data
-     * being stored in the cache. It is typically a string that serves as a reference to the cached
-     * data.
-     * @param mixed $data The `data` parameter in the `store` function represents the information that you
-     * want to store in the cache. This could be any type of data such as strings, arrays, objects,
-     * etc. The function stores this data in the cache with the specified key and time-to-live (TTL)
-     * @param int $ttl ttl The `` parameter in the `store` function represents the Time To Live (TTL)
-     * value, which specifies the expiration time for the cached data in seconds. In this case, the
-     * default TTL is set to 2592000 seconds, which is equivalent to 30 days. This means
-     *
-     * @return void In the `store` function, the `` is being returned after setting the expiration
-     * time for the cache item.
-     * @throws InvalidArgumentException
-     */
-    public function store(string $key, mixed $data, int $ttl = 2592000): void
-    {
-        $this->cache->get($key, function (ItemInterface $item) use ($data, $ttl) {
-            $item->expiresAfter($ttl);
-            return $data;
-        });
-    }
+		// Initialize the appropriate adapter
+		$this->initializeAdapter( $adapter, $options );
+	}
 
-    /**
-     * The get function retrieves an item from the cache by key, returning the item if it exists or
-     * null if it does not.
-     *
-     * @param string $key The `get` function takes a key as a parameter. This key is used to retrieve an item
-     * from the cache. If the item exists in the cache and is not expired, the function will return the
-     * item's value. If the item does not exist in the cache or is expired, the function
-     *
-     * @return mixed `get` method is returning the value associated with the given key from the cache. If
-     * the key is found in the cache and the item is considered a hit, then the value associated with
-     * that key is returned. If the key is not found in the cache or the item is not a hit, then `null`
-     * is returned.
-     * @throws InvalidArgumentException
-     */
-    public function get(string $key): mixed
-    {
-        return $this->cache->getItem($key)->isHit() ? $this->cache->getItem($key)->get() : null;
-    }
+	/**
+	 * Initialize a cache adapter
+	 *
+	 * @param string $adapter Adapter type
+	 * @param array $options Adapter options
+	 *
+	 * @return void
+	 */
+	private function initializeAdapter( string $adapter, array $options = [] ): void {
+		switch ( $adapter ) {
+			case 'array':
+				$this->cache = new ArrayAdapter(
+					$options['defaultLifetime'] ?? $this->defaultTtl,
+					$options['storeSerialized'] ?? true
+				);
+				break;
 
-    /**
-     * The clear function deletes an item from the cache using the specified key.
-     *
-     * @param string $key The `key` parameter in the `clear` function is used to specify the key of the item
-     * that needs to be cleared from the cache. This key is used to identify the specific item in the
-     * cache that should be deleted.
-     * @throws InvalidArgumentException
-     */
-    public function clear(string $key): void
-    {
-        $this->cache->deleteItem($key);
-    }
+			case 'redis':
+				if ( ! isset( $options['redis'] ) ) {
+					throw new \InvalidArgumentException( 'Redis connection is required for Redis adapter' );
+				}
+
+				$this->cache = new RedisAdapter(
+					$options['redis'],
+					$options['namespace'] ?? 'g-drive-cache',
+					$options['defaultLifetime'] ?? $this->defaultTtl
+				);
+				break;
+
+			case 'memcached':
+				if ( ! isset( $options['memcached'] ) ) {
+					throw new \InvalidArgumentException( 'Memcached connection is required for Memcached adapter' );
+				}
+
+				$this->cache = new MemcachedAdapter(
+					$options['memcached'],
+					$options['namespace'] ?? 'g-drive-cache',
+					$options['defaultLifetime'] ?? $this->defaultTtl
+				);
+				break;
+
+			case 'filesystem':
+			default:
+				// Get cache directory path, fallback to plugin's cache dir if WordPress functions not available
+				$cacheDir = defined( 'GDI_CACHE_DIR' ) ? GDI_CACHE_DIR : __DIR__ . '/../cache';
+
+				$this->cache = new FilesystemAdapter(
+					$options['namespace'] ?? 'g-drive-cache',
+					$options['defaultLifetime'] ?? $this->defaultTtl,
+					$options['directory'] ?? $cacheDir
+				);
+				break;
+		}
+	}
+
+	/**
+	 * Store data in the cache
+	 *
+	 * @param string $key Cache key
+	 * @param mixed $data Data to store
+	 * @param int|null $ttl Time to live in seconds (null for default)
+	 *
+	 * @return void
+	 * @throws InvalidArgumentException
+	 */
+	public function store( string $key, mixed $data, ?int $ttl = null ): void {
+		$ttl = $ttl ?? $this->defaultTtl;
+
+		$this->cache->get( $key, function ( ItemInterface $item ) use ( $data, $ttl ) {
+			$item->expiresAfter( $ttl );
+
+			return $data;
+		} );
+	}
+
+	/**
+	 * Get data from the cache
+	 *
+	 * @param string $key Cache key
+	 *
+	 * @return mixed Data or null if not found
+	 * @throws InvalidArgumentException
+	 */
+	public function get( string $key ): mixed {
+		$item = $this->cache->getItem( $key );
+
+		return $item->isHit() ? $item->get() : null;
+	}
+
+	/**
+	 * Clear an item from the cache
+	 *
+	 * @param string $key Cache key
+	 *
+	 * @return bool True if successful
+	 * @throws InvalidArgumentException
+	 */
+	public function clear( string $key ): bool {
+		return $this->cache->deleteItem( $key );
+	}
+
+	/**
+	 * Clear all items from the cache
+	 *
+	 * @return bool True if successful
+	 */
+	public function clearAll(): bool {
+		return $this->cache->clear();
+	}
+
+	/**
+	 * Get the current cache adapter
+	 *
+	 * @return CacheItemPoolInterface
+	 */
+	public function getAdapter(): CacheItemPoolInterface {
+		return $this->cache;
+	}
+
+	/**
+	 * Set a new cache adapter
+	 *
+	 * @param CacheItemPoolInterface $adapter
+	 *
+	 * @return void
+	 */
+	public function setAdapter( CacheItemPoolInterface $adapter ): void {
+		$this->cache = $adapter;
+	}
 }
