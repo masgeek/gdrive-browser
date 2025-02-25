@@ -7,22 +7,16 @@ namespace App;
  */
 class GoogleDriveIntegration {
 
-	/**
-	 * @var GoogleDriveIntegration
-	 */
-	private static $instance;
+	private static ?GoogleDriveIntegration $instance = null;
 
-	/**
-	 * @var CredentialsHandler
-	 */
-	private $credentials_handler;
+	private ?CredentialsHandler $credentials_handler;
 
 	/**
 	 * Get singleton instance
 	 *
 	 * @return GoogleDriveIntegration
 	 */
-	public static function get_instance() {
+	public static function get_instance(): GoogleDriveIntegration {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
@@ -72,8 +66,7 @@ class GoogleDriveIntegration {
 			'manage_options',
 			'google-drive-integration',
 			[ $this, 'display_admin_page' ],
-			'dashicons-cloud',
-			30
+			'dashicons-cloud'
 		);
 
 		add_submenu_page(
@@ -96,17 +89,45 @@ class GoogleDriveIntegration {
 	}
 
 	/**
+	 * Initialize default settings (should be called only once)
+	 */
+	private function initialize_default_settings(): void {
+		// Option to track if defaults have been set
+		$defaults_initialized = get_option( 'gdi_defaults_initialized', false );
+
+		if ( ! $defaults_initialized ) {
+			// Define default values
+			$defaults = [
+				'gdi_root_folder_id'        => '13-S74hrLKkT82t3yMaht6OegnC70aBxc',
+				'gdi_service_account_email' => 'gdrive@fuelrod-87f7b.iam.gserviceaccount.com',
+				'gdi_cache_duration'        => 3600 // 1 hour
+			];
+
+			// Add default options
+			foreach ( $defaults as $option_name => $default_value ) {
+				add_option( $option_name, $default_value );
+			}
+
+			// Mark defaults as initialized
+			update_option( 'gdi_defaults_initialized', true );
+		}
+	}
+
+	/**
 	 * Register plugin settings
 	 */
-	public function register_settings() {
+	public function register_settings(): void {
+		// Initialize default settings if needed
+		$this->initialize_default_settings();
+
 		register_setting( 'gdi_settings', 'gdi_root_folder_id', [
 			'sanitize_callback' => 'sanitize_text_field',
-			'default'           => '13-S74hrLKkT82t3yMaht6OegnC70aBxc'
+			'default'           => null
 		] );
 
 		register_setting( 'gdi_settings', 'gdi_service_account_email', [
 			'sanitize_callback' => 'sanitize_email',
-			'default'           => 'gdrive@fuelrod-87f7b.iam.gserviceaccount.com'
+			'default'           => null
 		] );
 
 		register_setting( 'gdi_settings', 'gdi_cache_duration', [
@@ -157,14 +178,14 @@ class GoogleDriveIntegration {
 	/**
 	 * Settings section callback
 	 */
-	public function settings_section_callback() {
+	public function settings_section_callback(): void {
 		echo '<p>' . __( 'Configure your Google Drive integration settings.', 'google-drive-integration' ) . '</p>';
 	}
 
 	/**
 	 * Service account JSON callback
 	 */
-	public function service_account_json_callback() {
+	public function service_account_json_callback(): void {
 		$credentials_exist = file_exists( GDI_CREDENTIALS_FILE );
 		?>
         <div class="gdi-json-container">
@@ -201,7 +222,7 @@ class GoogleDriveIntegration {
 	/**
 	 * Service account email callback
 	 */
-	public function service_account_email_callback() {
+	public function service_account_email_callback(): void {
 		$service_account_email = get_option( 'gdi_service_account_email' );
 		?>
         <input type="email" id="gdi_service_account_email" name="gdi_service_account_email"
@@ -215,7 +236,7 @@ class GoogleDriveIntegration {
 	/**
 	 * Root folder ID callback
 	 */
-	public function root_folder_id_callback() {
+	public function root_folder_id_callback(): void {
 		$root_folder_id = get_option( 'gdi_root_folder_id' );
 		?>
         <input type="text" id="gdi_root_folder_id" name="gdi_root_folder_id"
@@ -229,7 +250,7 @@ class GoogleDriveIntegration {
 	/**
 	 * Cache duration callback
 	 */
-	public function cache_duration_callback() {
+	public function cache_duration_callback(): void {
 		$cache_duration = get_option( 'gdi_cache_duration', 3600 );
 		?>
         <input type="number" id="gdi_cache_duration" name="gdi_cache_duration"
@@ -243,7 +264,7 @@ class GoogleDriveIntegration {
 	/**
 	 * Display settings page
 	 */
-	public function display_settings_page() {
+	public function display_settings_page(): void {
 		// Check user capabilities
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -266,7 +287,7 @@ class GoogleDriveIntegration {
 	/**
 	 * Display admin page
 	 */
-	public function display_admin_page() {
+	public function display_admin_page(): void {
 		// Check user capabilities
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -306,7 +327,7 @@ class GoogleDriveIntegration {
 	 *
 	 * @param string $hook The current admin page
 	 */
-	public function enqueue_admin_assets( $hook ) {
+	public function enqueue_admin_assets( $hook ): void {
 		if ( ! in_array( $hook, [
 			'toplevel_page_google-drive-integration',
 			'google-drive_page_google-drive-integration-settings'
@@ -340,7 +361,7 @@ class GoogleDriveIntegration {
 	 *
 	 * @return array|null JSON decoded credentials or null if not found
 	 */
-	public function get_service_account_credentials() {
+	public function get_service_account_credentials(): ?array {
 		if ( file_exists( GDI_CREDENTIALS_FILE ) ) {
 			$encrypted = file_get_contents( GDI_CREDENTIALS_FILE );
 			$decrypted = $this->credentials_handler->decryptData( $encrypted );
