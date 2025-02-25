@@ -27,7 +27,7 @@ class GoogleDriveShortcode {
 	/**
 	 * Register scripts and styles
 	 */
-	public function register_scripts() {
+	public function register_scripts(): void {
 		wp_register_style(
 			'gdrive-browser-style',
 			GDI_PLUGIN_URL . 'assets/css/gdrive-browser.css',
@@ -156,14 +156,14 @@ class GoogleDriveShortcode {
 			return ob_get_clean();
 
 		} catch ( \Exception $e ) {
-			return '<div class="gdrive-error">' . __( 'Error: Unable to access Google Drive files.', 'google-drive-integration' ) . '</div>';
+			return '<div class="gdrive-error">' . __( 'Error: Unable to access Google Drive files. '.$e->getMessage(), 'google-drive-integration' ) . '</div>';
 		}
 	}
 
 	/**
 	 * AJAX handler for changing folders
 	 */
-	public function ajax_change_folder() {
+	public function ajax_change_folder(): void {
 		// Verify nonce
 		check_ajax_referer( 'gdrive_nonce', 'nonce' );
 
@@ -177,7 +177,7 @@ class GoogleDriveShortcode {
 
 		try {
 			$this->driveService = new GoogleDriveService();
-			$this->driveService->changeFolder( $folder_id );
+			$this->driveService->changeFolder($folder_id);
 
 			$files       = $this->driveService->getFolderContents();
 			$breadcrumbs = $this->driveService->getBreadcrumbs();
