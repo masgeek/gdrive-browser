@@ -12,136 +12,99 @@ use Google_Service_Drive;
 
 /* The `GoogleDriveService` class is a PHP class that provides functionality to interact with Google
 Drive API */
-class GoogleDriveService
-{
-    private Google_Client $client;
-    private Google_Service_Drive $service;
 
-    private CacheService $cacheService;
-    private string $currentFolderId;
+class GoogleDriveService {
+	private Google_Client $client;
+	private Google_Service_Drive $service;
 
-  
-    /**
-     * The function constructs a Google Drive client with specified credentials and settings, allowing
-     * access to Google Drive API functionalities.
-     * @param string folderId The `folderId` parameter in the constructor is used to specify the ID of
-     * the Google Drive folder that will be used as the default folder for operations if a specific
-     * folder ID is not provided when creating an instance of the class. If `folderId` is not provided,
-     * the default folder ID specified
-     */
-    public function __construct(string $folderId = null)
-    {
-        $dotenv = Dotenv::createImmutable(dirname(__DIR__));
-
-        $dotenv->load();
-
-        $dotenv->required([
-            'GOOGLE_CREDENTIALS_PATH',
-            'GOOGLE_SERVICE_ACCOUNT',
-            'GOOGLE_DEFAULT_FOLDER_ID',
-            'GOOGLE_APPLICATION_NAME'
-        ])->notEmpty();
-
-        $credentialsPath = $_ENV['GOOGLE_CREDENTIALS_PATH'];
-        $appName = $_ENV['GOOGLE_APPLICATION_NAME'];
-        $serviceAccount = $_ENV['GOOGLE_SERVICE_ACCOUNT'];
-        if ($folderId === null) {
-            $defaultFolderId = $_ENV['GOOGLE_DEFAULT_FOLDER_ID'];
-        } else {
-            $defaultFolderId = $folderId;
-        }
+	private CacheService $cacheService;
+	private string $currentFolderId;
 
 
-        $this->client = new Google_Client();
-        $this->client->setApplicationName($appName);
-        $this->client->setScopes(Google_Service_Drive::DRIVE_READONLY);
-        $this->client->setAuthConfig($credentialsPath);
+	public function __construct( $credentialsFile, CacheService $cacheService, string $folderId = null ) {
 
-        if ($serviceAccount) {
-            $this->client->setSubject($serviceAccount);
-        }
+		if ( $folderId === null ) {
+			$folderId = get_option( 'wp_gdrive_default_folder_id', '' );
+		}
 
-        $this->service = new Google_Service_Drive($this->client);
-        $this->currentFolderId = $defaultFolderId;
-        $this->cacheService = new CacheService();
-    }
+		$appName = get_option( 'wp_gdrive_app_name', 'WordPress Google Drive' );
 
-    /**
-     * This PHP function retrieves the contents of a folder, caching the results to improve
-     * performance.
-     * 
-     * @param int pageSize The `pageSize` parameter in the `getFolderContents` function is used to
-     * specify the number of items to be retrieved per page when fetching the contents of a folder. By
-     * default, the `pageSize` is set to 50, but you can provide a different value when calling the
-     * function to customize
-     * 
-     * @return array The function `getFolderContents` returns an array of files from the current
-     * folder. If the files are not found in the cache, it fetches the files from the service and
-     * stores them in the cache before returning them.
-     */
-    public function getFolderContents(int $pageSize = 50): array
-    {
+		$this->client = new Google_Client();
+		$this->client->setApplicationName( $appName );
+		$this->client->setScopes( Google_Service_Drive::DRIVE_READONLY );
+		$this->client->setAuthConfig( $credentialsFile );
 
-        $cacheKey = md5($this->currentFolderId);
+		$serviceAccount = get_option( 'wp_gdrive_service_account', '' );
+
+		if ( $serviceAccount ) {
+			$this->client->setSubject( $serviceAccount );
+		}
+
+		$this->service         = new Google_Service_Drive( $this->client );
+		$this->currentFolderId = $folderId;
+		$this->cacheService    = $cacheService;
+	}
+
+	public function getFolderContents( int $pageSize = 50 ): array {
+
+		$cacheKey = md5( $this->currentFolderId );
 
 
-        $files = $this->cacheService->get($cacheKey);
+		$files = $this->cacheService->get( $cacheKey );
 
-        if ($files === null) {
-            $results = $this->service->files->listFiles([
-                'q' => "'$this->currentFolderId' in parents and trashed = false",
-                'fields' => 'nextPageToken, files(id, name, mimeType, webViewLink)',
-                'pageSize' => $pageSize
-            ]);
-            $files = $results->getFiles();
-            $this->cacheService->store($cacheKey, $files);
-        }
-        return $files;
-    }
+		if ( $files === null ) {
+			$results = $this->service->files->listFiles( [
+				'q'        => "'$this->currentFolderId' in parents and trashed = false",
+				'fields'   => 'nextPageToken, files(id, name, mimeType, webViewLink)',
+				'pageSize' => $pageSize
+			] );
+			$files   = $results->getFiles();
+			$this->cacheService->store( $cacheKey, $files );
+		}
 
-
-
-    /**
-     * This PHP function retrieves breadcrumbs for a given folder ID, caching the result for future
-     * use.
-     * 
-     * @return array The `getBreadcrumbs` function returns an array of breadcrumbs for the current
-     * folder. The breadcrumbs are retrieved from a cache using the current folder ID as a cache key.
-     * If the breadcrumbs are not found in the cache, they are generated by iterating through the
-     * parent folders of the current folder and storing the folder ID and name in the breadcrumbs
-     * array. Finally, the generated breadcrumbs are stored in the cache before
-     */
-    public function getBreadcrumbs(): array
-    {
-        $cacheKey = md5($this->currentFolderId . '-crumbs');
-        $currentFolderId = $this->currentFolderId;
-        $breadcrumbs = $this->cacheService->get($cacheKey);
-        if ($breadcrumbs === null) {
-            $breadcrumbs = [];
-            while ($currentFolderId && $currentFolderId !== 'root') {
-                $folder = $this->service->files->get($currentFolderId, ['fields' => 'id, name, parents']);
-                array_unshift($breadcrumbs, [
-                    'id' => $folder->getId(),
-                    'name' => $folder->getName()
-                ]);
-                $currentFolderId = $folder->getParents()[0] ?? null;
-            }
-            $this->cacheService->store($cacheKey, $breadcrumbs);
-        }
-
-        return $breadcrumbs;
-    }
+		return $files;
+	}
 
 
-    /**
-     * The function `changeFolder` sets the current folder ID to the provided folder ID in PHP.
-     * 
-     * @param string folderId The `changeFolder` function takes a parameter `folderId` of type string.
-     * This function sets the `currentFolderId` property of the class to the value of the `folderId`
-     * parameter.
-     */
-    public function changeFolder(string $folderId): void
-    {
-        $this->currentFolderId = $folderId;
-    }
+	/**
+	 * This PHP function retrieves breadcrumbs for a given folder ID, caching the result for future
+	 * use.
+	 *
+	 * @return array The `getBreadcrumbs` function returns an array of breadcrumbs for the current
+	 * folder. The breadcrumbs are retrieved from a cache using the current folder ID as a cache key.
+	 * If the breadcrumbs are not found in the cache, they are generated by iterating through the
+	 * parent folders of the current folder and storing the folder ID and name in the breadcrumbs
+	 * array. Finally, the generated breadcrumbs are stored in the cache before
+	 */
+	public function getBreadcrumbs(): array {
+		$cacheKey        = md5( $this->currentFolderId . '-crumbs' );
+		$currentFolderId = $this->currentFolderId;
+		$breadcrumbs     = $this->cacheService->get( $cacheKey );
+		if ( $breadcrumbs === null ) {
+			$breadcrumbs = [];
+			while ( $currentFolderId && $currentFolderId !== 'root' ) {
+				$folder = $this->service->files->get( $currentFolderId, [ 'fields' => 'id, name, parents' ] );
+				array_unshift( $breadcrumbs, [
+					'id'   => $folder->getId(),
+					'name' => $folder->getName()
+				] );
+				$currentFolderId = $folder->getParents()[0] ?? null;
+			}
+			$this->cacheService->store( $cacheKey, $breadcrumbs );
+		}
+
+		return $breadcrumbs;
+	}
+
+
+	/**
+	 * The function `changeFolder` sets the current folder ID to the provided folder ID in PHP.
+	 *
+	 * @param string folderId The `changeFolder` function takes a parameter `folderId` of type string.
+	 * This function sets the `currentFolderId` property of the class to the value of the `folderId`
+	 * parameter.
+	 */
+	public function changeFolder( string $folderId ): void {
+		$this->currentFolderId = $folderId;
+	}
 }
