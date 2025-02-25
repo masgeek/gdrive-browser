@@ -3,3 +3,4 @@ vendor
 credentials.json
 .idea
 cache
+credentials
