@@ -53,3 +53,34 @@
 .gdi-manual-entry textarea {
     margin-bottom: 5px;
 }
+
+.gdi-docs-panel {
+    background: #f7f7f7;
+    border-left: 4px solid #4285f4;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.gdi-docs-panel h3 {
+    margin-top: 0;
+    color: #4285f4;
+}
+
+.gdi-docs-panel h4 {
+    margin-bottom: 5px;
+}
+
+.gdi-docs-panel pre {
+    background: #fff;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    overflow: auto;
+}
+
+.gdi-docs-panel code {
+    background: #fff;
+    padding: 2px 5px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
