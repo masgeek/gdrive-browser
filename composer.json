@@ -42,7 +42,6 @@
     "lint": "phpcs",
     "lint:fix": "phpcbf",
     "package:zip": [
-      "@composer install --no-dev --optimize-autoloader",
       "wp dist-archive . --format=zip"
     ]
   },
