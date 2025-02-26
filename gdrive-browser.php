@@ -36,6 +36,7 @@ register_activation_hook( __FILE__, 'google_drive_integration_activate' );
 
 function google_drive_integration_init(): void {
 	GoogleDriveIntegration::get_instance();
+	new \App\GoogleDriveShortCode();
 }
 
 /**
