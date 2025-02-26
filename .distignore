@@ -1,5 +1,6 @@
 .git
 .github
+.idea
 .gitignore
 .DS_Store
 node_modules
@@ -24,3 +25,5 @@ credentials.json
 index.php
 cache
 credentials
+.env
+.distignore
