@@ -1,4 +1,8 @@
 <?php
+/***
+ * The `class BaseGoogleService` is a PHP class that serves as a base for interacting with the Google
+ * Drive API
+ **/
 
 namespace App;
 
