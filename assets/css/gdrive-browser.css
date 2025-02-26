@@ -1,31 +1,77 @@
+/* Main container */
 .gdrive-browser-container {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
     margin: 20px 0;
     background: #fff;
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+    padding: 0;
+    overflow: hidden;
 }
 
+/* Title */
 .gdrive-browser-title {
-    margin-top: 0;
-    margin-bottom: 15px;
-    font-size: 20px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 16px 20px;
+    font-size: 18px;
+    font-weight: 500;
+    color: #202124;
+    border-bottom: 1px solid #e0e0e0;
 }
 
-.gdrive-breadcrumbs {
-    margin-bottom: 15px;
-    background: #f7f7f7;
-    padding: 8px 12px;
-    border-radius: 3px;
+/* Search box */
+.gdrive-search-container {
+    padding: 12px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+    position: relative;
+}
+
+.gdrive-search-input {
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    border: 1px solid #ddd;
+    border-radius: 24px;
     font-size: 14px;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.gdrive-search-container:before {
+    content: "\f002"; /* Font Awesome search icon */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    position: absolute;
+    left: 32px;
+    top: 21px;
+    color: #757575;
+    z-index: 1;
+}
+
+.gdrive-search-input:focus {
+    border-color: #4285f4;
+}
+
+/* Breadcrumbs */
+.gdrive-breadcrumbs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 10px 20px;
+    background-color: #f8f9fa;
+    font-size: 14px;
+    color: #5f6368;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .gdrive-breadcrumb-link {
+    display: inline-flex;
+    align-items: center;
     color: #4285f4;
     text-decoration: none;
+    margin-right: 4px;
 }
 
 .gdrive-breadcrumb-link:hover {
@@ -33,82 +79,371 @@
 }
 
 .gdrive-breadcrumb-current {
-    color: #555;
+    color: #5f6368;
     font-weight: 500;
 }
 
+.gdrive-breadcrumb-separator {
+    margin: 0 4px;
+    color: #5f6368;
+}
+
+/* Loading indicator */
 .gdrive-loading {
-    padding: 20px;
-    text-align: center;
-    color: #666;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    color: #5f6368;
 }
 
-.gdrive-files-container.gdrive-loading-active {
-    opacity: 0.5;
+.gdrive-loading.active {
+    display: flex;
 }
 
-.gdrive-files-list {
-    list-style: none;
-    margin: 0;
+.gdrive-spinner {
+    margin-bottom: 10px;
+}
+
+.gdrive-spinner:before {
+    content: "\f110"; /* Font Awesome spinner icon */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    font-size: 32px;
+    animation: fa-spin 2s infinite linear;
+}
+
+@keyframes fa-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Files container */
+.gdrive-files-container {
     padding: 0;
+    position: relative;
+    min-height: 200px;
 }
 
-.gdrive-file-item {
-    padding: 10px;
-    border-bottom: 1px solid #f0f0f0;
-    transition: background-color 0.2s ease-in-out;
+.gdrive-files-container.loading {
+    opacity: 0.6;
 }
 
-.gdrive-file-item:hover {
-    background-color: #f9f9f9;
+/* Empty folder */
+.gdrive-empty-folder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    color: #5f6368;
 }
 
-.gdrive-file-item:last-child {
-    border-bottom: none;
+.gdrive-empty-folder i {
+    font-size: 64px;
+    color: #ccc;
+    margin-bottom: 16px;
 }
 
+.gdrive-empty-folder p {
+    font-size: 16px;
+    margin: 0;
+}
+
+/* Files table */
+.gdrive-files-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.gdrive-files-table thead {
+    background-color: #f8f9fa;
+    color: #5f6368;
+    font-weight: 500;
+}
+
+.gdrive-files-table th {
+    text-align: left;
+    padding: 12px 20px;
+    font-weight: 500;
+    font-size: 13px;
+    border-bottom: 1px solid #e0e0e0;
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 1;
+}
+
+.gdrive-files-table td {
+    padding: 12px 20px;
+    border-bottom: 1px solid #f1f3f4;
+    vertical-align: middle;
+}
+
+.gdrive-file-row {
+    transition: background-color 0.15s ease;
+}
+
+.gdrive-file-row:hover {
+    background-color: #f8f9fa;
+}
+
+.gdrive-files-table .gdrive-col-name {
+    width: 50%;
+}
+
+.gdrive-files-table .gdrive-col-size {
+    width: 15%;
+    font-size: 13px;
+    color: #5f6368;
+}
+
+.gdrive-files-table .gdrive-col-modified {
+    width: 20%;
+    font-size: 13px;
+    color: #5f6368;
+}
+
+.gdrive-files-table .gdrive-col-actions {
+    width: 15%;
+    text-align: right;
+}
+
+/* File and folder links */
 .gdrive-folder-link, .gdrive-file-link {
     display: flex;
     align-items: center;
     text-decoration: none;
+    color: #202124;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.gdrive-folder-link {
+.gdrive-folder-link:hover, .gdrive-file-link:hover {
     color: #4285f4;
 }
 
-.gdrive-file-link {
-    color: #333;
+.gdrive-folder-link .gdrive-file-name, .gdrive-file-link .gdrive-file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.gdrive-folder-icon, .gdrive-file-icon {
+/* File type icons */
+.gdrive-icon {
     width: 24px;
-    height: 24px;
-    margin-right: 10px;
-    background-size: contain;
-    background-repeat: no-repeat;
-}
-
-.gdrive-folder-icon {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%234285F4' d='M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z'/%3E%3C/svg%3E");
-}
-
-.gdrive-file-icon {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23757575' d='M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z'/%3E%3C/svg%3E");
-}
-
-.gdrive-empty-folder {
-    color: #666;
-    font-style: italic;
-    padding: 15px 0;
+    margin-right: 12px;
+    display: inline-block;
     text-align: center;
+    font-size: 16px;
+    color: #5f6368;
 }
 
+.gdrive-icon-folder:before {
+    content: "\f07b"; /* Font Awesome folder icon */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: #4285F4;
+}
+
+.gdrive-icon-document:before {
+    content: "\f15b"; /* Font Awesome file icon */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: #4285F4;
+}
+
+.gdrive-icon-spreadsheet:before {
+    content: "\f1c3"; /* Font Awesome excel file icon */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: #0F9D58;
+}
+
+.gdrive-icon-presentation:before {
+    content: "\f1c4"; /* Font Awesome powerpoint file icon */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: #F4B400;
+}
+
+.gdrive-icon-pdf:before {
+    content: "\f1c1"; /* Font Awesome pdf file icon */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: #DB4437;
+}
+
+.gdrive-icon-image:before {
+    content: "\f1c5"; /* Font Awesome image file icon */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: #34A853;
+}
+
+.gdrive-icon-text:before {
+    content: "\f15c"; /* Font Awesome text file icon */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: #5F6368;
+}
+
+.gdrive-icon-archive:before {
+    content: "\f1c6"; /* Font Awesome archive file icon */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: #A142F4;
+}
+
+.gdrive-icon-video:before {
+    content: "\f1c8"; /* Font Awesome video file icon */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: #F90101;
+}
+
+.gdrive-icon-audio:before {
+    content: "\f1c7"; /* Font Awesome audio file icon */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: #4285F4;
+}
+
+.gdrive-icon-generic:before {
+    content: "\f15b"; /* Font Awesome file icon */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: #5F6368;
+}
+
+/* Action buttons */
+.gdrive-action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    color: #5f6368;
+    background: transparent;
+    transition: background-color 0.2s;
+    margin-left: 4px;
+}
+
+.gdrive-action-button:hover {
+    background-color: rgba(60, 64, 67, 0.08);
+    color: #4285f4;
+}
+
+.gdrive-open-folder:before {
+    content: "\f07c"; /* Font Awesome folder-open icon */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+}
+
+.gdrive-view-file:before {
+    content: "\f06e"; /* Font Awesome eye icon */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+}
+
+/* Error message */
 .gdrive-error {
-    color: #d32f2f;
-    padding: 15px;
-    border: 1px solid #ffcdd2;
-    background-color: #ffebee;
+    padding: 16px 20px;
+    margin: 20px 0;
+    background-color: #fce8e6;
+    color: #d93025;
     border-radius: 4px;
-    margin: 10px 0;
+    border-left: 4px solid #d93025;
+}
+
+/* Pagination */
+.gdrive-pagination {
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+}
+
+.gdrive-pagination-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin: 0 4px;
+    border-radius: 50%;
+    background: transparent;
+    color: #5f6368;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: none;
+}
+
+.gdrive-pagination-button:hover {
+    background-color: rgba(60, 64, 67, 0.08);
+}
+
+.gdrive-pagination-button.active {
+    background-color: #e8f0fe;
+    color: #1a73e8;
+}
+
+.gdrive-pagination-button.disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.gdrive-pagination-button.disabled:hover {
+    background-color: transparent;
+}
+
+/* Responsiveness */
+@media (max-width: 768px) {
+    .gdrive-files-table .gdrive-col-modified {
+        display: none;
+    }
+
+    .gdrive-files-table .gdrive-col-name {
+        width: 60%;
+    }
+
+    .gdrive-files-table .gdrive-col-size {
+        width: 20%;
+    }
+
+    .gdrive-files-table .gdrive-col-actions {
+        width: 20%;
+    }
+}
+
+@media (max-width: 480px) {
+    .gdrive-files-table .gdrive-col-size {
+        display: none;
+    }
+
+    .gdrive-files-table .gdrive-col-name {
+        width: 70%;
+    }
+
+    .gdrive-files-table .gdrive-col-actions {
+        width: 30%;
+    }
+
+    .gdrive-breadcrumbs {
+        font-size: 12px;
+    }
+
+    .gdrive-browser-title {
+        font-size: 16px;
+    }
 }
