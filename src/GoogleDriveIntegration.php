@@ -181,6 +181,56 @@ class GoogleDriveIntegration {
 	 */
 	public function settings_section_callback(): void {
 		echo '<p>' . __( 'Configure your Google Drive integration settings.', 'google-drive-integration' ) . '</p>';
+
+		// Add documentation panel
+		?>
+        <div class="gdi-docs-panel">
+            <h3><?php _e( 'Shortcode Usage', 'google-drive-integration' ); ?></h3>
+            <p><?php _e( 'To display Google Drive files on any page or post, use the following shortcode:', 'google-drive-integration' ); ?></p>
+            <pre><code>[gdrive_browser]</code></pre>
+
+            <p><?php _e( 'Optional parameters:', 'google-drive-integration' ); ?></p>
+            <ul>
+                <li><code>folder_id</code>
+                    - <?php _e( 'Specify a different folder ID than the default', 'google-drive-integration' ); ?></li>
+                <li><code>title</code> - <?php _e( 'Custom title for the browser', 'google-drive-integration' ); ?></li>
+                <li><code>show_breadcrumbs</code>
+                    - <?php _e( 'Show or hide breadcrumb navigation (true/false)', 'google-drive-integration' ); ?></li>
+            </ul>
+
+            <p><?php _e( 'Example with parameters:', 'google-drive-integration' ); ?></p>
+            <pre><code>[gdrive_browser folder_id="FOLDER_ID" title="My Documents" show_breadcrumbs="true"]</code></pre>
+
+            <h3><?php _e( 'Cache Configuration', 'google-drive-integration' ); ?></h3>
+            <p><?php _e( 'Google Drive API responses are cached to improve performance. You can adjust the cache duration above.', 'google-drive-integration' ); ?></p>
+            <p><?php _e( 'Advanced cache configuration can be done by adding the following filters to your theme\'s functions.php file:', 'google-drive-integration' ); ?></p>
+
+            <h4><?php _e( 'Change Cache Adapter', 'google-drive-integration' ); ?></h4>
+            <pre><code>add_filter('gdi_cache_adapter', function() {
+    return 'redis'; // Options: 'filesystem', 'array', 'redis', 'memcached'
+});</code></pre>
+
+            <h4><?php _e( 'Configure Cache Options', 'google-drive-integration' ); ?></h4>
+            <pre><code>add_filter('gdi_cache_options', function() {
+    // Example for Redis adapter
+    $redis = new \Redis();
+    $redis->connect('127.0.0.1', 6379);
+
+    return [
+        'redis' => $redis,
+        'namespace' => 'my-gdrive-cache'
+    ];
+});</code></pre>
+
+            <h4><?php _e( 'Manually Clear Cache', 'google-drive-integration' ); ?></h4>
+            <p><?php _e( 'You can clear the cache programmatically:', 'google-drive-integration' ); ?></p>
+            <pre><code>
+                    $cacheService = new \App\CacheService();
+$cacheService->clearAll(); // Clear all cache
+$cacheService->clear('specific-key'); // Clear specific item
+                </code></pre>
+        </div>
+		<?php
 	}
 
 	/**
@@ -357,19 +407,4 @@ class GoogleDriveIntegration {
 		] );
 	}
 
-	/**
-	 * Get service account credentials
-	 *
-	 * @return array|null JSON decoded credentials or null if not found
-	 */
-	public function get_service_account_credentials(): ?array {
-		if ( file_exists( GDI_CREDENTIALS_FILE ) ) {
-			$encrypted = file_get_contents( GDI_CREDENTIALS_FILE );
-			$decrypted = $this->credentials_handler->decryptData( $encrypted );
-
-			return json_decode( $decrypted, true );
-		}
-
-		return null;
-	}
 }
