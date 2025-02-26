@@ -1,13 +1,16 @@
 <?php
 /**
  * Plugin Name: Google Drive Integration
- * Plugin URI: https://example.com/plugins/google-drive-integration
- * Description: A WordPress plugin to integrate Google Drive functionality
+ * Plugin URI: https://github.com/masgeek/gdrive-browser/releases
+ * Description: A WordPress plugin to integrate Google Drive functionality and browse the files
  * Version: 1.0.0
- * Author: Your Name
- * Author URI: https://example.com
+ * Author: Masgeek
+ * Author URI: https://github.com/masgeek
  * Text Domain: google-drive-integration
  * License: GPL-2.0+
+ * Requires PHP: 8.2
+ * Requires at least: 5.8
+ * Domain Path: /languages
  */
 
 // If this file is called directly, abort.
