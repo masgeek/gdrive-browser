@@ -41,13 +41,9 @@
     "pre-autoload-dump": "Google\\Task\\Composer::cleanup",
     "lint": "phpcs",
     "lint:fix": "phpcbf",
-    "package": [
-      "Composer\\Config::disableProcessTimeout",
-      "php ./bin/package.php"
-    ],
     "package:zip": [
       "@composer install --no-dev --optimize-autoloader",
-      "./vendor/bin/wp dist-archive . --format=zip"
+      "wp dist-archive . --format=zip"
     ]
   },
   "extra": {
