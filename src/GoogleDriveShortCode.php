@@ -19,36 +19,36 @@ class GoogleDriveShortCode
      * @var array File type icon mappings
      */
     private static array $fileTypeIcons = [
-    'folder'       => 'fa-folder',
-    'document'     => 'fa-file-alt',
-    'spreadsheet'  => 'fa-file-excel',
-    'presentation' => 'fa-file-powerpoint',
-    'pdf'          => 'fa-file-pdf',
-    'image'        => 'fa-file-image',
-    'text'         => 'fa-file-alt',
-    'archive'      => 'fa-file-archive',
-    'video'        => 'fa-file-video',
-    'audio'        => 'fa-file-audio',
-    'generic'      => 'fa-file'
+        'folder' => 'fa-folder',
+        'document' => 'fa-file-alt',
+        'spreadsheet' => 'fa-file-excel',
+        'presentation' => 'fa-file-powerpoint',
+        'pdf' => 'fa-file-pdf',
+        'image' => 'fa-file-image',
+        'text' => 'fa-file-alt',
+        'archive' => 'fa-file-archive',
+        'video' => 'fa-file-video',
+        'audio' => 'fa-file-audio',
+        'generic' => 'fa-file'
     ];
 
     /**
      * @var array MIME type to file type mappings
      */
     private static array $mimeTypeMap = [
-    'application/vnd.google-apps.folder'       => 'folder',
-    'application/vnd.google-apps.document'     => 'document',
-    'application/vnd.google-apps.spreadsheet'  => 'spreadsheet',
-    'application/vnd.google-apps.presentation' => 'presentation',
-    'application/pdf'                          => 'pdf',
-    'image/jpeg'                               => 'image',
-    'image/png'                                => 'image',
-    'image/gif'                                => 'image',
-    'text/plain'                               => 'text',
-    'text/csv'                                 => 'spreadsheet',
-    'application/zip'                          => 'archive',
-    'video/mp4'                                => 'video',
-    'audio/mpeg'                               => 'audio'
+        'application/vnd.google-apps.folder' => 'folder',
+        'application/vnd.google-apps.document' => 'document',
+        'application/vnd.google-apps.spreadsheet' => 'spreadsheet',
+        'application/vnd.google-apps.presentation' => 'presentation',
+        'application/pdf' => 'pdf',
+        'image/jpeg' => 'image',
+        'image/png' => 'image',
+        'image/gif' => 'image',
+        'text/plain' => 'text',
+        'text/csv' => 'spreadsheet',
+        'application/zip' => 'archive',
+        'video/mp4' => 'video',
+        'audio/mpeg' => 'audio'
     ];
 
     private string $rootFolderId;
@@ -67,14 +67,15 @@ class GoogleDriveShortCode
     private function registerHooks(): void
     {
         // Register shortcode
-        add_shortcode('gdrive_browser', [ $this, 'renderShortcode' ]);
+        add_shortcode('gdrive-browser-test', [$this, 'helloWorldShortCode']);
+        add_shortcode('gdrive-browser', [$this, 'renderShortcode']);
 
         // Register scripts and styles
-        add_action('wp_enqueue_scripts', [ $this, 'registerAssets' ]);
+        add_action('wp_enqueue_scripts', [$this, 'registerAssets']);
 
         // Register AJAX handlers
-        add_action('wp_ajax_gdrive_change_folder', [ $this, 'ajaxChangeFolder' ]);
-        add_action('wp_ajax_nopriv_gdrive_change_folder', [ $this, 'ajaxChangeFolder' ]);
+        add_action('wp_ajax_gdrive_change_folder', [$this, 'ajaxChangeFolder']);
+        add_action('wp_ajax_nopriv_gdrive_change_folder', [$this, 'ajaxChangeFolder']);
     }
 
     /**
@@ -93,7 +94,7 @@ class GoogleDriveShortCode
         wp_register_style(
             'gdrive-browser-style',
             GDI_PLUGIN_URL . 'assets/css/gdrive-browser.css',
-            [ 'font-awesome' ],
+            ['font-awesome'],
             GDI_PLUGIN_VERSION
         );
 
@@ -103,17 +104,17 @@ class GoogleDriveShortCode
         wp_register_script(
             'gdrive-browser-script',
             GDI_PLUGIN_URL . 'assets/js/gdrive-browser.js',
-            [ 'jquery' ],
+            ['jquery'],
             GDI_PLUGIN_VERSION,
             true
         );
 
         wp_localize_script(
             'gdrive-browser-script', 'gdriveData', [
-            'ajaxUrl'      => admin_url('admin-ajax.php'),
-            'nonce'        => wp_create_nonce('gdrive_nonce'),
-            'rootFolderId' => get_option('gdi_root_folder_id', '')
-            ] 
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('gdrive_nonce'),
+                'rootFolderId' => get_option('gdi_root_folder_id', '')
+            ]
         );
     }
 
@@ -126,11 +127,11 @@ class GoogleDriveShortCode
     {
         // Default colors
         $colors = [
-        'primary' => '#4285f4',
-        'secondary' => '#5f6368',
-        'background' => '#ffffff',
-        'foreground' => '#202124',
-        'border' => '#e0e0e0',
+            'primary' => '#4285f4',
+            'secondary' => '#5f6368',
+            'background' => '#ffffff',
+            'foreground' => '#202124',
+            'border' => '#e0e0e0',
         ];
 
         // Try to detect theme colors - this will vary by theme
@@ -160,12 +161,12 @@ class GoogleDriveShortCode
         $css = '';
 
         // Current theme
-        $theme      = wp_get_theme();
+        $theme = wp_get_theme();
         $theme_name = strtolower($theme->get('Name'));
 
         // Check for specific themes and add optimizations
-        if (strpos($theme_name, 'twenty twenty-two') !== false 
-            || strpos($theme_name, 'twenty twenty-three') !== false 
+        if (strpos($theme_name, 'twenty twenty-two') !== false
+            || strpos($theme_name, 'twenty twenty-three') !== false
         ) {
             // Block theme support
             $css .= '
@@ -176,7 +177,7 @@ class GoogleDriveShortCode
                 margin-right: auto;
             }
         ';
-        } elseif (strpos($theme_name, 'divi') !== false ) {
+        } elseif (strpos($theme_name, 'divi') !== false) {
             // Divi theme support
             $css .= '
             .gdrive-browser-container {
@@ -192,7 +193,7 @@ class GoogleDriveShortCode
                 border-radius: 3px;
             }
         ';
-        } elseif (strpos($theme_name, 'astra') !== false ) {
+        } elseif (strpos($theme_name, 'astra') !== false) {
             // Astra theme support
             $css .= '
             .gdrive-browser-container {
@@ -203,8 +204,8 @@ class GoogleDriveShortCode
                 border-radius: 3px;
             }
         ';
-        } elseif (str_contains($theme_name, 'elementor') 
-            || str_contains($theme_name, 'hello') 
+        } elseif (str_contains($theme_name, 'elementor')
+            || str_contains($theme_name, 'hello')
         ) {
             // Elementor/Hello theme support
             $css .= '
@@ -215,7 +216,7 @@ class GoogleDriveShortCode
         }
 
         // Additional CSS for admin pages
-        if (is_admin() ) {
+        if (is_admin()) {
             $css .= '
             .gdrive-browser-container {
                 font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
@@ -243,6 +244,11 @@ class GoogleDriveShortCode
         return $css;
     }
 
+    function helloWorldShortCode($atts)
+    {
+        return "<p>Hello, World!</p>";
+    }
+
     /**
      * Render shortcode
      *
@@ -251,7 +257,7 @@ class GoogleDriveShortCode
      * @return string HTML output
      * @throws InvalidArgumentException
      */
-    public function renderShortcode( array $atts = [] ): string
+    public function renderShortcode(array $atts = []): string
     {
         // Enqueue required assets
         wp_enqueue_style('gdrive-browser-style');
@@ -260,15 +266,15 @@ class GoogleDriveShortCode
         // Process attributes
         $attributes = shortcode_atts(
             [
-            'folder_id' => get_option('gdi_root_folder_id'),
-            'title' => __('Google Drive Files', 'google-drive-integration'),
-            'show_breadcrumbs' => true,
-            'items_per_page' => 20,
-            'columns' => 'name,size,modified,actions',
-            'restrict_to_folder' => true,
-            'theme_match' => true,    // Whether to try matching the theme
-            'max_width' => '',        // Custom max width (e.g., '800px', '100%')
-            'container_class' => '',  // Additional CSS classes
+                'folder_id' => get_option('gdi_root_folder_id'),
+                'title' => __('Google Drive Files', 'google-drive-integration'),
+                'show_breadcrumbs' => true,
+                'items_per_page' => 20,
+                'columns' => 'name,size,modified,actions',
+                'restrict_to_folder' => true,
+                'theme_match' => true,    // Whether to try matching the theme
+                'max_width' => '',        // Custom max width (e.g., '800px', '100%')
+                'container_class' => '',  // Additional CSS classes
             ], $atts
         );
 
@@ -276,8 +282,8 @@ class GoogleDriveShortCode
         // Initialize drive service
         try {
             $this->driveService = new GoogleDriveService($attributes['folder_id']);
-            $files              = $this->driveService->getFolderContents();
-            $breadcrumbs        = ( $attributes['show_breadcrumbs'] ) ? $this->driveService->getBreadcrumbs() : [];
+            $files = $this->driveService->getFolderContents();
+            $breadcrumbs = ($attributes['show_breadcrumbs']) ? $this->driveService->getBreadcrumbs() : [];
 
             // Get selected columns
             $columns = explode(',', $attributes['columns']);
@@ -290,7 +296,7 @@ class GoogleDriveShortCode
 
             return ob_get_clean();
 
-        } catch ( \Exception $e ) {
+        } catch (\Exception $e) {
             return $this->renderError(__('Error: Unable to access Google Drive files.', 'google-drive-integration'));
         }
     }
@@ -298,7 +304,7 @@ class GoogleDriveShortCode
     /**
      * Render browser container
      */
-    private function renderBrowserContainer( $attributes, $files, $breadcrumbs, $columns )
+    private function renderBrowserContainer($attributes, $files, $breadcrumbs, $columns)
     {
         $classes = 'gdrive-browser-container';
         if (!empty($attributes['container_class'])) {
@@ -323,7 +329,7 @@ class GoogleDriveShortCode
 
 
         // Title
-        if (! empty($attributes['title']) ) {
+        if (!empty($attributes['title'])) {
             $html .= '<h3 class="gdrive-browser-title">' . esc_html($attributes['title']) . '</h3>';
         }
 
@@ -331,7 +337,7 @@ class GoogleDriveShortCode
         $html .= $this->renderSearchBox();
 
         // Breadcrumbs
-        if ($attributes['show_breadcrumbs'] && ! empty($breadcrumbs) ) {
+        if ($attributes['show_breadcrumbs'] && !empty($breadcrumbs)) {
             $html .= $this->renderBreadcrumbs($breadcrumbs, $attributes['restrict_to_folder'] ? $attributes['folder_id'] : null);
         }
 
@@ -341,7 +347,7 @@ class GoogleDriveShortCode
         // Files list
         $html .= '<div class="gdrive-files-container">';
 
-        if (empty($files) ) {
+        if (empty($files)) {
             $html .= $this->renderEmptyFolder();
         } else {
             $html .= $this->renderFilesTable($files, $columns);
@@ -370,28 +376,28 @@ class GoogleDriveShortCode
     /**
      * Render breadcrumbs
      */
-    private function renderBreadcrumbs( $breadcrumbs, $rootFolderId = null )
+    private function renderBreadcrumbs($breadcrumbs, $rootFolderId = null)
     {
         $html = '<div class="gdrive-breadcrumbs">';
 
         // Find the index of the root folder in breadcrumbs
-        $rootIndex = - 1;
-        if ($rootFolderId ) {
-            foreach ( $breadcrumbs as $index => $crumb ) {
-                if ($crumb['id'] === $rootFolderId ) {
+        $rootIndex = -1;
+        if ($rootFolderId) {
+            foreach ($breadcrumbs as $index => $crumb) {
+                if ($crumb['id'] === $rootFolderId) {
                     $rootIndex = $index;
                     break;
                 }
             }
         }
 
-        $startIndex = ( $rootIndex > - 1 ) ? $rootIndex : 0;
-        $last       = count($breadcrumbs) - 1;
+        $startIndex = ($rootIndex > -1) ? $rootIndex : 0;
+        $last = count($breadcrumbs) - 1;
 
-        for ( $i = $startIndex; $i <= $last; $i ++ ) {
-            $crumb = $breadcrumbs[ $i ];
+        for ($i = $startIndex; $i <= $last; $i++) {
+            $crumb = $breadcrumbs[$i];
 
-            if ($i === $last ) {
+            if ($i === $last) {
                 $html .= '<span class="gdrive-breadcrumb-current">' . esc_html($crumb['name']) . '</span>';
             } else {
                 $html .= '<a href="#" class="gdrive-breadcrumb-link" data-folder-id="' . esc_attr($crumb['id']) . '">';
@@ -420,7 +426,7 @@ class GoogleDriveShortCode
     /**
      * Render error message
      */
-    private function renderError( $message )
+    private function renderError($message)
     {
         return '<div class="gdrive-error">' . esc_html($message) . '</div>';
     }
@@ -428,23 +434,23 @@ class GoogleDriveShortCode
     /**
      * Render files table
      */
-    private function renderFilesTable( $files, $columns )
+    private function renderFilesTable($files, $columns)
     {
         // Sort files: folders first, then alphabetically
         usort(
-            $files, function ( $a, $b ) {
-                $aIsFolder = $a->getMimeType() === 'application/vnd.google-apps.folder';
-                $bIsFolder = $b->getMimeType() === 'application/vnd.google-apps.folder';
+            $files, function ($a, $b) {
+            $aIsFolder = $a->getMimeType() === 'application/vnd.google-apps.folder';
+            $bIsFolder = $b->getMimeType() === 'application/vnd.google-apps.folder';
 
-                if ($aIsFolder && ! $bIsFolder ) {
-                    return - 1;
-                }
-                if (! $bIsFolder && $aIsFolder ) {
-                      return 1;
-                }
+            if ($aIsFolder && !$bIsFolder) {
+                return -1;
+            }
+            if (!$bIsFolder && $aIsFolder) {
+                return 1;
+            }
 
-                return strcmp($a->getName(), $b->getName());
-            } 
+            return strcmp($a->getName(), $b->getName());
+        }
         );
 
         $html = '<table class="gdrive-files-table">';
@@ -452,19 +458,19 @@ class GoogleDriveShortCode
         // Table header
         $html .= '<thead><tr>';
 
-        if (in_array('name', $columns) ) {
+        if (in_array('name', $columns)) {
             $html .= '<th class="gdrive-col-name">' . __('Name', 'google-drive-integration') . '</th>';
         }
 
-        if (in_array('size', $columns) ) {
+        if (in_array('size', $columns)) {
             $html .= '<th class="gdrive-col-size">' . __('Size', 'google-drive-integration') . '</th>';
         }
 
-        if (in_array('modified', $columns) ) {
+        if (in_array('modified', $columns)) {
             $html .= '<th class="gdrive-col-modified">' . __('Modified', 'google-drive-integration') . '</th>';
         }
 
-        if (in_array('actions', $columns) ) {
+        if (in_array('actions', $columns)) {
             $html .= '<th class="gdrive-col-actions">' . __('Actions', 'google-drive-integration') . '</th>';
         }
 
@@ -473,7 +479,7 @@ class GoogleDriveShortCode
         // Table body
         $html .= '<tbody>';
 
-        foreach ( $files as $file ) {
+        foreach ($files as $file) {
             $html .= $this->renderFileRow($file, $columns);
         }
 
@@ -485,26 +491,26 @@ class GoogleDriveShortCode
     /**
      * Render a single file row
      */
-    private function renderFileRow( $file, $columns ): string
+    private function renderFileRow($file, $columns): string
     {
-        $isFolder     = $file->getMimeType() === 'application/vnd.google-apps.folder';
-        $fileId       = $file->getId();
-        $fileName     = $file->getName();
-        $fileLink     = $file->getWebViewLink();
-        $fileSize     = $file->getSize() ?? 0;
+        $isFolder = $file->getMimeType() === 'application/vnd.google-apps.folder';
+        $fileId = $file->getId();
+        $fileName = $file->getName();
+        $fileLink = $file->getWebViewLink();
+        $fileSize = $file->getSize() ?? 0;
         $fileModified = $file->getModifiedTime() ?? '';
 
         // Get file type and icon
-        $fileType  = $this->getFileType($file->getMimeType());
+        $fileType = $this->getFileType($file->getMimeType());
         $iconClass = $this->getFileIconClass($fileType);
 
-        $html = '<tr class="gdrive-file-row ' . ( $isFolder ? 'gdrive-folder-row' : 'gdrive-document-row' ) . '">';
+        $html = '<tr class="gdrive-file-row ' . ($isFolder ? 'gdrive-folder-row' : 'gdrive-document-row') . '">';
 
         // Name column
-        if (in_array('name', $columns) ) {
+        if (in_array('name', $columns)) {
             $html .= '<td class="gdrive-col-name">';
 
-            if ($isFolder ) {
+            if ($isFolder) {
                 $html .= '<a href="#" class="gdrive-folder-link" data-folder-id="' . esc_attr($fileId) . '">';
                 $html .= '<span class="gdrive-icon ' . esc_attr($iconClass) . '"></span>';
                 $html .= '<span class="gdrive-file-name">' . esc_html($fileName) . '</span>';
@@ -520,22 +526,22 @@ class GoogleDriveShortCode
         }
 
         // Size column
-        if (in_array('size', $columns) ) {
+        if (in_array('size', $columns)) {
             $formattedSize = $isFolder ? '-' : $this->formatFileSize($fileSize);
-            $html          .= '<td class="gdrive-col-size">' . esc_html($formattedSize) . '</td>';
+            $html .= '<td class="gdrive-col-size">' . esc_html($formattedSize) . '</td>';
         }
 
         // Modified column
-        if (in_array('modified', $columns) ) {
+        if (in_array('modified', $columns)) {
             $formattedDate = $fileModified ? date_i18n(get_option('date_format'), strtotime($fileModified)) : '-';
-            $html          .= '<td class="gdrive-col-modified">' . esc_html($formattedDate) . '</td>';
+            $html .= '<td class="gdrive-col-modified">' . esc_html($formattedDate) . '</td>';
         }
 
         // Actions column
-        if (in_array('actions', $columns) ) {
+        if (in_array('actions', $columns)) {
             $html .= '<td class="gdrive-col-actions">';
 
-            if ($isFolder ) {
+            if ($isFolder) {
                 $html .= '<a href="#" class="gdrive-action-button gdrive-open-folder" data-folder-id="' . esc_attr($fileId) . '" title="' . esc_attr__('Open folder', 'google-drive-integration') . '"></a>';
             } else {
                 $html .= '<a href="' . esc_url($fileLink) . '" target="_blank" class="gdrive-action-button gdrive-view-file" title="' . esc_attr__('View file', 'google-drive-integration') . '"></a>';
@@ -556,16 +562,16 @@ class GoogleDriveShortCode
      *
      * @return string Formatted file size
      */
-    private function formatFileSize( $bytes )
+    private function formatFileSize($bytes)
     {
-        if ($bytes == 0 ) {
+        if ($bytes == 0) {
             return '0 B';
         }
 
-        $units = [ 'B', 'KB', 'MB', 'GB', 'TB' ];
-        $i     = floor(log($bytes, 1024));
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $i = floor(log($bytes, 1024));
 
-        return round($bytes / pow(1024, $i), 2) . ' ' . $units[ $i ];
+        return round($bytes / pow(1024, $i), 2) . ' ' . $units[$i];
     }
 
     /**
@@ -575,9 +581,9 @@ class GoogleDriveShortCode
      *
      * @return string File type
      */
-    private function getFileType( $mimeType )
+    private function getFileType($mimeType)
     {
-        return self::$mimeTypeMap[ $mimeType ] ?? 'generic';
+        return self::$mimeTypeMap[$mimeType] ?? 'generic';
     }
 
     /**
@@ -587,9 +593,9 @@ class GoogleDriveShortCode
      *
      * @return string CSS class for icon
      */
-    private function getFileIconClass( $fileType )
+    private function getFileIconClass($fileType)
     {
-        return 'fas ' . ( self::$fileTypeIcons[ $fileType ] ?? self::$fileTypeIcons['generic'] );
+        return 'fas ' . (self::$fileTypeIcons[$fileType] ?? self::$fileTypeIcons['generic']);
     }
 
     /**
@@ -600,53 +606,53 @@ class GoogleDriveShortCode
         // Verify nonce
         check_ajax_referer('gdrive_nonce', 'nonce');
 
-        $folder_id          = isset($_POST['folder_id']) ? sanitize_text_field($_POST['folder_id']) : '';
-        $root_folder_id     = isset($_POST['root_folder_id']) ? sanitize_text_field($_POST['root_folder_id']) : '';
-        $restrict_to_folder = isset($_POST['restrict_to_folder']) ? (bool) $_POST['restrict_to_folder'] : true;
+        $folder_id = isset($_POST['folder_id']) ? sanitize_text_field($_POST['folder_id']) : '';
+        $root_folder_id = isset($_POST['root_folder_id']) ? sanitize_text_field($_POST['root_folder_id']) : '';
+        $restrict_to_folder = isset($_POST['restrict_to_folder']) ? (bool)$_POST['restrict_to_folder'] : true;
 
 
-        if (empty($folder_id) ) {
-            wp_send_json_error([ 'message' => __('Invalid folder ID', 'google-drive-integration') ]);
+        if (empty($folder_id)) {
+            wp_send_json_error(['message' => __('Invalid folder ID', 'google-drive-integration')]);
 
             return;
         }
 
         try {
             $this->driveService = new GoogleDriveService();
-            if ($restrict_to_folder && ! empty($root_folder_id) && $folder_id !== $root_folder_id ) {
+            if ($restrict_to_folder && !empty($root_folder_id) && $folder_id !== $root_folder_id) {
                 // Verify the folder is a child of the root folder
                 $isAllowed = $this->isFolderWithinBoundary($folder_id, $root_folder_id);
 
-                if (! $isAllowed ) {
+                if (!$isAllowed) {
                     wp_send_json_error(
                         [
-                        'message' => __('Navigation restricted to the specified folder', 'google-drive-integration')
-                        ] 
+                            'message' => __('Navigation restricted to the specified folder', 'google-drive-integration')
+                        ]
                     );
 
-                       return;
+                    return;
                 }
             }
 
             $this->driveService->changeFolder($folder_id);
 
-            $files       = $this->driveService->getFolderContents();
+            $files = $this->driveService->getFolderContents();
             $breadcrumbs = $this->driveService->getBreadcrumbs();
 
             wp_send_json_success(
                 [
-                'files'          => $files,
-                'breadcrumbs'    => $breadcrumbs,
-                'current_folder' => $folder_id
-                ] 
+                    'files' => $files,
+                    'breadcrumbs' => $breadcrumbs,
+                    'current_folder' => $folder_id
+                ]
             );
 
-        } catch ( \Exception $e ) {
+        } catch (\Exception $e) {
             wp_send_json_error(
                 [
-                'message' => __('Error accessing Google Drive folder', 'google-drive-integration'),
-                'error'   => $e->getMessage()
-                ] 
+                    'message' => __('Error accessing Google Drive folder', 'google-drive-integration'),
+                    'error' => $e->getMessage()
+                ]
             );
         }
     }
@@ -658,7 +664,7 @@ class GoogleDriveShortCode
      * @return bool
      * @throws InvalidArgumentException
      */
-    private function isFolderWithinBoundary( $folderId, $rootFolderId ): bool
+    private function isFolderWithinBoundary($folderId, $rootFolderId): bool
     {
         try {
             // Save current folder to restore it later
@@ -672,15 +678,15 @@ class GoogleDriveShortCode
             $this->driveService->changeFolder($currentFolder);
 
             // Check if root folder ID is in the breadcrumbs
-            foreach ( $breadcrumbs as $crumb ) {
-                if ($crumb['id'] === $rootFolderId ) {
+            foreach ($breadcrumbs as $crumb) {
+                if ($crumb['id'] === $rootFolderId) {
                     return true;
                 }
             }
 
             // Root folder not found in breadcrumbs
             return false;
-        } catch ( \Exception $e ) {
+        } catch (\Exception $e) {
             // If there's an error, deny access
             return false;
         }
