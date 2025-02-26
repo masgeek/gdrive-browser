@@ -1,5 +1,9 @@
 <?php
-/** @noinspection PhpUnhandledExceptionInspection */
+/**
+ * 
+ *
+ * @noinspection PhpUnhandledExceptionInspection 
+ */
 require_once __DIR__ . '/../vendor/autoload.php';
 
 session_start();
@@ -47,12 +51,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['folderId'])) {
         }
     }
 
-    echo json_encode([
+    echo json_encode(
+        [
         'status' => 'success',
         'folderId' => $folderId,
         'files' => $fileList,
         'breadcrumbs' => $breadcrumbs,
-    ]);
+        ]
+    );
 } else {
     echo json_encode(['status' => 'error', 'message' => 'Invalid request.']);
 }
