@@ -42,6 +42,8 @@ class GoogleDriveService extends BaseGoogleService {
 	 *
 	 * @throws \Google\Exception
 	 */
+
+
 	public function __construct( string $folderId = null ) {
 		// Get WordPress options instead of using dotenv
 		$credentials_exist     = file_exists( GDI_CREDENTIALS_FILE );
@@ -153,6 +155,18 @@ class GoogleDriveService extends BaseGoogleService {
 		return $breadcrumbs;
 	}
 
+	public function getCurrentFolderId() {
+		return $this->currentFolderId;
+	}
+
+	public function getFolder( $folderId ) {
+		try {
+			return $this->service->files->get( $folderId, [ 'fields' => 'id, name, parents' ] );
+		} catch ( \Exception $e ) {
+			// Log error or handle gracefully
+			return null;
+		}
+	}
 
 	/**
 	 * The function `changeFolder` sets the current folder ID to the provided folder ID in PHP.
