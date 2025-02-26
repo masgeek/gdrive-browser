@@ -199,7 +199,7 @@ class GoogleDriveIntegration
         <div class="gdi-docs-panel">
             <h3><?php _e('Shortcode Usage', 'google-drive-integration'); ?></h3>
             <p><?php _e('To display Google Drive files on any page or post, use the following shortcode:', 'google-drive-integration'); ?></p>
-            <pre><code>[gdrive_browser]</code></pre>
+            <pre><code>[gdrive-browser]</code></pre>
 
             <p><?php _e('Optional parameters:', 'google-drive-integration'); ?></p>
             <ul>
@@ -211,7 +211,7 @@ class GoogleDriveIntegration
             </ul>
 
             <p><?php _e('Example with parameters:', 'google-drive-integration'); ?></p>
-            <pre><code>[gdrive_browser folder_id="FOLDER_ID" title="My Documents" show_breadcrumbs="true"]</code></pre>
+            <pre><code>[gdrive-browser folder_id="FOLDER_ID" title="My Documents" show_breadcrumbs="true"]</code></pre>
 
             <h3><?php _e('Cache Configuration', 'google-drive-integration'); ?></h3>
             <p><?php _e('Google Drive API responses are cached to improve performance. You can adjust the cache duration above.', 'google-drive-integration'); ?></p>
@@ -237,7 +237,7 @@ class GoogleDriveIntegration
             <h4><?php _e('Manually Clear Cache', 'google-drive-integration'); ?></h4>
             <p><?php _e('You can clear the cache programmatically:', 'google-drive-integration'); ?></p>
             <pre><code>
-                    $cacheService = new \App\CacheService();
+$cacheService = new \App\CacheService();
 $cacheService->clearAll(); // Clear all cache
 $cacheService->clear('specific-key'); // Clear specific item
                 </code></pre>
