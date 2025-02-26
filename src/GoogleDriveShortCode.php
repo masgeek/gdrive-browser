@@ -2,6 +2,8 @@
 
 namespace App;
 
+use Psr\Cache\InvalidArgumentException;
+
 /**
  * Google Drive Browser - handles shortcode, display and AJAX functionality
  */
@@ -10,12 +12,12 @@ class GoogleDriveShortCode {
 	/**
 	 * @var GoogleDriveService
 	 */
-	private $driveService;
+	private GoogleDriveService $driveService;
 
 	/**
 	 * @var array File type icon mappings
 	 */
-	private static $fileTypeIcons = [
+	private static array $fileTypeIcons = [
 		'folder'       => 'fa-folder',
 		'document'     => 'fa-file-alt',
 		'spreadsheet'  => 'fa-file-excel',
@@ -32,7 +34,7 @@ class GoogleDriveShortCode {
 	/**
 	 * @var array MIME type to file type mappings
 	 */
-	private static $mimeTypeMap = [
+	private static array $mimeTypeMap = [
 		'application/vnd.google-apps.folder'       => 'folder',
 		'application/vnd.google-apps.document'     => 'document',
 		'application/vnd.google-apps.spreadsheet'  => 'spreadsheet',
@@ -48,6 +50,8 @@ class GoogleDriveShortCode {
 		'audio/mpeg'                               => 'audio'
 	];
 
+	private string $rootFolderId;
+
 	/**
 	 * Constructor
 	 */
@@ -58,7 +62,7 @@ class GoogleDriveShortCode {
 	/**
 	 * Register hooks and shortcode
 	 */
-	private function registerHooks() {
+	private function registerHooks(): void {
 		// Register shortcode
 		add_shortcode( 'gdrive_browser', [ $this, 'renderShortcode' ] );
 
@@ -110,21 +114,24 @@ class GoogleDriveShortCode {
 	 * @param array $atts Shortcode attributes
 	 *
 	 * @return string HTML output
+	 * @throws InvalidArgumentException
 	 */
-	public function renderShortcode( $atts = [] ) {
+	public function renderShortcode( array $atts = [] ): string {
 		// Enqueue required assets
 		wp_enqueue_style( 'gdrive-browser-style' );
 		wp_enqueue_script( 'gdrive-browser-script' );
 
 		// Process attributes
 		$attributes = shortcode_atts( [
-			'folder_id'        => get_option( 'gdi_root_folder_id' ),
-			'title'            => __( 'Google Drive Files', 'google-drive-integration' ),
-			'show_breadcrumbs' => true,
-			'items_per_page'   => 20,
-			'columns'          => 'name,size,modified,actions',
+			'folder_id'          => get_option( 'gdi_root_folder_id' ),
+			'title'              => __( 'Google Drive Files', 'google-drive-integration' ),
+			'show_breadcrumbs'   => true,
+			'items_per_page'     => 20,
+			'columns'            => 'name,size,modified,actions',
+			'restrict_to_folder' => true, // New attribute
 		], $atts );
 
+		$this->rootFolderId = $attributes['folder_id'];
 		// Initialize drive service
 		try {
 			$this->driveService = new GoogleDriveService( $attributes['folder_id'] );
@@ -151,7 +158,11 @@ class GoogleDriveShortCode {
 	 * Render browser container
 	 */
 	private function renderBrowserContainer( $attributes, $files, $breadcrumbs, $columns ) {
-		$html = '<div class="gdrive-browser-container" data-current-folder="' . esc_attr( $attributes['folder_id'] ) . '">';
+		$html = '<div class="gdrive-browser-container" 
+                data-current-folder="' . esc_attr( $attributes['folder_id'] ) . '"
+                data-root-folder="' . esc_attr( $attributes['folder_id'] ) . '"
+                data-restrict-folder="' . esc_attr( $attributes['restrict_to_folder'] ? '1' : '0' ) . '">';
+
 
 		// Title
 		if ( ! empty( $attributes['title'] ) ) {
@@ -163,7 +174,7 @@ class GoogleDriveShortCode {
 
 		// Breadcrumbs
 		if ( $attributes['show_breadcrumbs'] && ! empty( $breadcrumbs ) ) {
-			$html .= $this->renderBreadcrumbs( $breadcrumbs );
+			$html .= $this->renderBreadcrumbs( $breadcrumbs, $attributes['restrict_to_folder'] ? $attributes['folder_id'] : null );
 		}
 
 		// Loading indicator
@@ -200,12 +211,27 @@ class GoogleDriveShortCode {
 	/**
 	 * Render breadcrumbs
 	 */
-	private function renderBreadcrumbs( $breadcrumbs ) {
+	private function renderBreadcrumbs( $breadcrumbs, $rootFolderId = null ) {
 		$html = '<div class="gdrive-breadcrumbs">';
 
-		$last = count( $breadcrumbs ) - 1;
-		foreach ( $breadcrumbs as $index => $crumb ) {
-			if ( $index === $last ) {
+		// Find the index of the root folder in breadcrumbs
+		$rootIndex = - 1;
+		if ( $rootFolderId ) {
+			foreach ( $breadcrumbs as $index => $crumb ) {
+				if ( $crumb['id'] === $rootFolderId ) {
+					$rootIndex = $index;
+					break;
+				}
+			}
+		}
+
+		$startIndex = ( $rootIndex > - 1 ) ? $rootIndex : 0;
+		$last       = count( $breadcrumbs ) - 1;
+
+		for ( $i = $startIndex; $i <= $last; $i ++ ) {
+			$crumb = $breadcrumbs[ $i ];
+
+			if ( $i === $last ) {
 				$html .= '<span class="gdrive-breadcrumb-current">' . esc_html( $crumb['name'] ) . '</span>';
 			} else {
 				$html .= '<a href="#" class="gdrive-breadcrumb-link" data-folder-id="' . esc_attr( $crumb['id'] ) . '">';
@@ -294,7 +320,7 @@ class GoogleDriveShortCode {
 	/**
 	 * Render a single file row
 	 */
-	private function renderFileRow( $file, $columns ) {
+	private function renderFileRow( $file, $columns ): string {
 		$isFolder     = $file->getMimeType() === 'application/vnd.google-apps.folder';
 		$fileId       = $file->getId();
 		$fileName     = $file->getName();
@@ -404,7 +430,10 @@ class GoogleDriveShortCode {
 		// Verify nonce
 		check_ajax_referer( 'gdrive_nonce', 'nonce' );
 
-		$folder_id = isset( $_POST['folder_id'] ) ? sanitize_text_field( $_POST['folder_id'] ) : '';
+		$folder_id          = isset( $_POST['folder_id'] ) ? sanitize_text_field( $_POST['folder_id'] ) : '';
+		$root_folder_id     = isset( $_POST['root_folder_id'] ) ? sanitize_text_field( $_POST['root_folder_id'] ) : '';
+		$restrict_to_folder = isset( $_POST['restrict_to_folder'] ) ? (bool) $_POST['restrict_to_folder'] : true;
+
 
 		if ( empty( $folder_id ) ) {
 			wp_send_json_error( [ 'message' => __( 'Invalid folder ID', 'google-drive-integration' ) ] );
@@ -414,6 +443,19 @@ class GoogleDriveShortCode {
 
 		try {
 			$this->driveService = new GoogleDriveService();
+			if ( $restrict_to_folder && ! empty( $root_folder_id ) && $folder_id !== $root_folder_id ) {
+				// Verify the folder is a child of the root folder
+				$isAllowed = $this->isFolderWithinBoundary( $folder_id, $root_folder_id );
+
+				if ( ! $isAllowed ) {
+					wp_send_json_error( [
+						'message' => __( 'Navigation restricted to the specified folder', 'google-drive-integration' )
+					] );
+
+					return;
+				}
+			}
+
 			$this->driveService->changeFolder( $folder_id );
 
 			$files       = $this->driveService->getFolderContents();
@@ -432,4 +474,39 @@ class GoogleDriveShortCode {
 			] );
 		}
 	}
+
+	/**
+	 * @param $folderId
+	 * @param $rootFolderId
+	 *
+	 * @return bool
+	 * @throws InvalidArgumentException
+	 */
+	private function isFolderWithinBoundary( $folderId, $rootFolderId ): bool {
+		try {
+			// Save current folder to restore it later
+			$currentFolder = $this->driveService->getCurrentFolderId();
+
+			// Temporarily change folder to check breadcrumbs
+			$this->driveService->changeFolder( $folderId );
+			$breadcrumbs = $this->driveService->getBreadcrumbs();
+
+			// Restore original folder
+			$this->driveService->changeFolder( $currentFolder );
+
+			// Check if root folder ID is in the breadcrumbs
+			foreach ( $breadcrumbs as $crumb ) {
+				if ( $crumb['id'] === $rootFolderId ) {
+					return true;
+				}
+			}
+
+			// Root folder not found in breadcrumbs
+			return false;
+		} catch ( \Exception $e ) {
+			// If there's an error, deny access
+			return false;
+		}
+	}
+
 }
