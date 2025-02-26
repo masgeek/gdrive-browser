@@ -33,8 +33,6 @@ class GoogleDriveIntegration {
 			GDI_CREDENTIALS_DIR,
 			GDI_CREDENTIALS_FILE
 		);
-
-		new GoogleDriveShortcode();
 		// Add hooks
 		$this->add_hooks();
 	}
