@@ -1,12 +1,12 @@
 <?php
 /**
- * Plugin Name: Google Drive Integration
+ * Plugin Name: Google Drive Browser
  * Plugin URI: https://github.com/masgeek/gdrive-browser/releases
  * Description: A WordPress plugin to integrate Google Drive functionality and browse the files
  * Version: 1.0.0
  * Author: Masgeek
  * Author URI: https://github.com/masgeek
- * Text Domain: google-drive-integration
+ * Text Domain: gdrive-browser
  * License: GPL-2.0+
  * Requires PHP: 8.2
  * Requires at least: 5.8
