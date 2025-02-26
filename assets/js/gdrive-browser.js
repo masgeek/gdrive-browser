@@ -1,4 +1,4 @@
-jQuery(document).ready(function($) {
+jQuery(document).ready(function ($) {
     // Utility object with file-related functions
     const GDriveUtils = {
         // File type mappings
@@ -34,7 +34,7 @@ jQuery(document).ready(function($) {
         },
 
         // Format file size
-        formatFileSize: function(bytes) {
+        formatFileSize: function (bytes) {
             if (bytes === 0 || bytes === null || bytes === undefined) {
                 return '-';
             }
@@ -46,7 +46,7 @@ jQuery(document).ready(function($) {
         },
 
         // Format date
-        formatDate: function(dateString) {
+        formatDate: function (dateString) {
             if (!dateString) {
                 return '-';
             }
@@ -56,18 +56,18 @@ jQuery(document).ready(function($) {
         },
 
         // Get file type from MIME type
-        getFileType: function(mimeType) {
+        getFileType: function (mimeType) {
             return this.fileTypes[mimeType] || 'generic';
         },
 
         // Get file icon class based on file type
-        getFileIconClass: function(fileType) {
+        getFileIconClass: function (fileType) {
             return this.iconClasses[fileType] || this.iconClasses['generic'];
         },
 
         // Sort files - folders first, then alphabetically
-        sortFiles: function(files) {
-            return files.sort(function(a, b) {
+        sortFiles: function (files) {
+            return files.sort(function (a, b) {
                 const aIsFolder = a.mimeType === 'application/vnd.google-apps.folder';
                 const bIsFolder = b.mimeType === 'application/vnd.google-apps.folder';
 
@@ -82,19 +82,19 @@ jQuery(document).ready(function($) {
     // Browser UI object - handles rendering and interactivity
     const GDriveBrowser = {
         // Initialize
-        init: function() {
+        init: function () {
             this.bindEvents();
         },
 
         // Bind events
-        bindEvents: function() {
+        bindEvents: function () {
             $(document).on('click', '.gdrive-folder-link, .gdrive-open-folder', this.handleFolderClick);
             $(document).on('click', '.gdrive-breadcrumb-link', this.handleBreadcrumbClick);
             $(document).on('input', '.gdrive-search-input', this.handleSearch);
         },
 
         // Handle folder click
-        handleFolderClick: function(e) {
+        handleFolderClick: function (e) {
             e.preventDefault();
 
             const container = $(this).closest('.gdrive-browser-container');
@@ -104,7 +104,7 @@ jQuery(document).ready(function($) {
         },
 
         // Handle breadcrumb click
-        handleBreadcrumbClick: function(e) {
+        handleBreadcrumbClick: function (e) {
             e.preventDefault();
 
             const container = $(this).closest('.gdrive-browser-container');
@@ -114,7 +114,7 @@ jQuery(document).ready(function($) {
         },
 
         // Handle search input
-        handleSearch: function() {
+        handleSearch: function () {
             const container = $(this).closest('.gdrive-browser-container');
             const searchTerm = $(this).val().toLowerCase();
 
@@ -125,19 +125,23 @@ jQuery(document).ready(function($) {
             }
 
             // Filter items based on search term
-            container.find('.gdrive-file-row').each(function() {
+            container.find('.gdrive-file-row').each(function () {
                 const fileName = $(this).find('.gdrive-file-name').text().toLowerCase();
                 $(this).toggle(fileName.includes(searchTerm));
             });
         },
 
         // Change folder
-        changeFolder: function(container, folderId) {
+        changeFolder: function (container, folderId) {
             // Show loading indicator
             this.showLoading(container, true);
 
             // Clear search input
             container.find('.gdrive-search-input').val('');
+
+            // Get root folder and restriction settings
+            const rootFolderId = container.data('root-folder');
+            const restrictFolder = container.data('restrict-folder') === 1;
 
             // Make AJAX request
             $.ajax({
@@ -146,15 +150,17 @@ jQuery(document).ready(function($) {
                 data: {
                     action: 'gdrive_change_folder',
                     nonce: gdriveData.nonce,
-                    folder_id: folderId
+                    folder_id: folderId,
+                    root_folder_id: rootFolderId,
+                    restrict_to_folder: restrictFolder
                 },
-                success: function(response) {
+                success: function (response) {
                     if (response.success) {
                         // Update current folder
                         container.attr('data-current-folder', response.data.current_folder);
 
                         // Update breadcrumbs
-                        GDriveBrowser.updateBreadcrumbs(container, response.data.breadcrumbs);
+                        GDriveBrowser.updateBreadcrumbs(container, response.data.breadcrumbs, rootFolderId);
 
                         // Update files list
                         GDriveBrowser.updateFilesList(container, response.data.files);
@@ -162,10 +168,10 @@ jQuery(document).ready(function($) {
                         GDriveBrowser.showError(container, response.data.message);
                     }
                 },
-                error: function() {
+                error: function () {
                     GDriveBrowser.showError(container, 'Error connecting to server');
                 },
-                complete: function() {
+                complete: function () {
                     // Hide loading indicator
                     GDriveBrowser.showLoading(container, false);
                 }
@@ -173,7 +179,7 @@ jQuery(document).ready(function($) {
         },
 
         // Show/hide loading indicator
-        showLoading: function(container, show) {
+        showLoading: function (container, show) {
             if (show) {
                 container.find('.gdrive-loading').addClass('active');
                 container.find('.gdrive-files-container').addClass('loading');
@@ -184,7 +190,7 @@ jQuery(document).ready(function($) {
         },
 
         // Update breadcrumbs
-        updateBreadcrumbs: function(container, breadcrumbs) {
+        updateBreadcrumbs: function (container, breadcrumbs, rootFolderId) {
             const breadcrumbsContainer = container.find('.gdrive-breadcrumbs');
 
             if (breadcrumbsContainer.length === 0 || !breadcrumbs) {
@@ -193,9 +199,25 @@ jQuery(document).ready(function($) {
 
             breadcrumbsContainer.empty();
 
+            // Find index of root folder in breadcrumbs if it exists
+            let rootIndex = -1;
+            if (rootFolderId) {
+                $.each(breadcrumbs, function (index, crumb) {
+                    if (crumb.id === rootFolderId) {
+                        rootIndex = index;
+                        return false; // Break the loop
+                    }
+                });
+            }
+
+            // If root folder is in breadcrumbs, only show from that point forward
+            const startIndex = rootIndex > -1 ? rootIndex : 0;
             const last = breadcrumbs.length - 1;
-            $.each(breadcrumbs, function(index, crumb) {
-                if (index === last) {
+
+            for (let i = startIndex; i <= last; i++) {
+                const crumb = breadcrumbs[i];
+
+                if (i === last) {
                     breadcrumbsContainer.append(
                         $('<span>')
                             .addClass('gdrive-breadcrumb-current')
@@ -216,11 +238,11 @@ jQuery(document).ready(function($) {
                             .text('/')
                     );
                 }
-            });
+            }
         },
 
         // Render empty folder message
-        renderEmptyFolder: function() {
+        renderEmptyFolder: function () {
             return $('<div>')
                 .addClass('gdrive-empty-folder')
                 .append($('<i>').addClass('fas fa-folder-open'))
@@ -228,7 +250,7 @@ jQuery(document).ready(function($) {
         },
 
         // Create table structure
-        createTableStructure: function() {
+        createTableStructure: function () {
             const table = $('<table>').addClass('gdrive-files-table');
 
             // Header row
@@ -247,7 +269,7 @@ jQuery(document).ready(function($) {
         },
 
         // Create file row
-        createFileRow: function(file) {
+        createFileRow: function (file) {
             const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
             const fileType = GDriveUtils.getFileType(file.mimeType);
             const iconClass = GDriveUtils.getFileIconClass(fileType);
@@ -314,7 +336,7 @@ jQuery(document).ready(function($) {
         },
 
         // Update files list
-        updateFilesList: function(container, files) {
+        updateFilesList: function (container, files) {
             const filesContainer = container.find('.gdrive-files-container');
 
             if (!files || files.length === 0) {
@@ -330,7 +352,7 @@ jQuery(document).ready(function($) {
             const tbody = table.find('tbody');
 
             // Add files to table
-            $.each(sortedFiles, function(index, file) {
+            $.each(sortedFiles, function (index, file) {
                 tbody.append(GDriveBrowser.createFileRow(file));
             });
 
@@ -339,7 +361,7 @@ jQuery(document).ready(function($) {
         },
 
         // Show error message
-        showError: function(container, message) {
+        showError: function (container, message) {
             container.find('.gdrive-files-container').html(
                 $('<div>')
                     .addClass('gdrive-error')
