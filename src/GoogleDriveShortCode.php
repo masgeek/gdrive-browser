@@ -93,6 +93,9 @@ class GoogleDriveShortCode {
 			GDI_PLUGIN_VERSION
 		);
 
+		// Add theme color support for Twenty Twenty-One and other themes that use CSS variables
+		wp_add_inline_style( 'gdrive-browser-style', $this->getThemeIntegrationCSS() );
+
 		wp_register_script(
 			'gdrive-browser-script',
 			GDI_PLUGIN_URL . 'assets/js/gdrive-browser.js',
@@ -109,6 +112,128 @@ class GoogleDriveShortCode {
 	}
 
 	/**
+	 * Get current theme colors for JavaScript
+	 *
+	 * @return array Theme colors
+	 */
+	private function getThemeColors() {
+		// Default colors
+		$colors = [
+			'primary' => '#4285f4',
+			'secondary' => '#5f6368',
+			'background' => '#ffffff',
+			'foreground' => '#202124',
+			'border' => '#e0e0e0',
+		];
+
+		// Try to detect theme colors - this will vary by theme
+		if (function_exists('get_theme_mod')) {
+			// Try to get colors from theme mods
+			$primary_color = get_theme_mod('primary_color', '');
+			if (!empty($primary_color)) {
+				$colors['primary'] = $primary_color;
+			}
+
+			$link_color = get_theme_mod('link_color', '');
+			if (!empty($link_color)) {
+				$colors['primary'] = $link_color;
+			}
+		}
+
+		return $colors;
+	}
+
+	/**
+	 * Generate additional CSS for theme integration
+	 *
+	 * @return string CSS rules
+	 */
+	private function getThemeIntegrationCSS() {
+		$css = '';
+
+		// Current theme
+		$theme      = wp_get_theme();
+		$theme_name = strtolower( $theme->get( 'Name' ) );
+
+		// Check for specific themes and add optimizations
+		if ( strpos( $theme_name, 'twenty twenty-two' ) !== false ||
+		     strpos( $theme_name, 'twenty twenty-three' ) !== false ) {
+			// Block theme support
+			$css .= '
+            .gdrive-browser-container {
+                --wp--style--global--content-size: 100%;
+                max-width: var(--wp--style--global--content-size);
+                margin-left: auto;
+                margin-right: auto;
+            }
+        ';
+		} elseif ( strpos( $theme_name, 'divi' ) !== false ) {
+			// Divi theme support
+			$css .= '
+            .gdrive-browser-container {
+                font-family: "Open Sans",Arial,sans-serif;
+            }
+            
+            .gdrive-browser-title {
+                font-weight: 500;
+                line-height: 1.7em;
+            }
+            
+            .gdrive-search-input {
+                border-radius: 3px;
+            }
+        ';
+		} elseif ( strpos( $theme_name, 'astra' ) !== false ) {
+			// Astra theme support
+			$css .= '
+            .gdrive-browser-container {
+                font-size: 15px;
+            }
+            
+            .gdrive-search-input {
+                border-radius: 3px;
+            }
+        ';
+		} elseif ( str_contains( $theme_name, 'elementor' ) ||
+		           str_contains( $theme_name, 'hello' ) ) {
+			// Elementor/Hello theme support
+			$css .= '
+            .gdrive-browser-container {
+                font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif;
+            }
+        ';
+		}
+
+		// Additional CSS for admin pages
+		if ( is_admin() ) {
+			$css .= '
+            .gdrive-browser-container {
+                font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+                color: #3c434a;
+            }
+            
+            .gdrive-browser-title {
+                background-color: #f0f0f1;
+                color: #1d2327;
+            }
+            
+            .gdrive-breadcrumbs,
+            .gdrive-files-table thead {
+                background-color: #f0f0f1;
+            }
+            
+            .gdrive-folder-link:hover, 
+            .gdrive-file-link:hover,
+            .gdrive-breadcrumb-link {
+                color: #2271b1;
+            }
+        ';
+		}
+
+		return $css;
+	}
+
+	/**
 	 * Render shortcode
 	 *
 	 * @param array $atts Shortcode attributes
@@ -122,14 +247,17 @@ class GoogleDriveShortCode {
 		wp_enqueue_script( 'gdrive-browser-script' );
 
 		// Process attributes
-		$attributes = shortcode_atts( [
-			'folder_id'          => get_option( 'gdi_root_folder_id' ),
-			'title'              => __( 'Google Drive Files', 'google-drive-integration' ),
-			'show_breadcrumbs'   => true,
-			'items_per_page'     => 20,
-			'columns'            => 'name,size,modified,actions',
-			'restrict_to_folder' => true, // New attribute
-		], $atts );
+		$attributes = shortcode_atts([
+			'folder_id' => get_option('gdi_root_folder_id'),
+			'title' => __('Google Drive Files', 'google-drive-integration'),
+			'show_breadcrumbs' => true,
+			'items_per_page' => 20,
+			'columns' => 'name,size,modified,actions',
+			'restrict_to_folder' => true,
+			'theme_match' => true,    // Whether to try matching the theme
+			'max_width' => '',        // Custom max width (e.g., '800px', '100%')
+			'container_class' => '',  // Additional CSS classes
+		], $atts);
 
 		$this->rootFolderId = $attributes['folder_id'];
 		// Initialize drive service
@@ -158,10 +286,26 @@ class GoogleDriveShortCode {
 	 * Render browser container
 	 */
 	private function renderBrowserContainer( $attributes, $files, $breadcrumbs, $columns ) {
-		$html = '<div class="gdrive-browser-container" 
-                data-current-folder="' . esc_attr( $attributes['folder_id'] ) . '"
-                data-root-folder="' . esc_attr( $attributes['folder_id'] ) . '"
-                data-restrict-folder="' . esc_attr( $attributes['restrict_to_folder'] ? '1' : '0' ) . '">';
+		$classes = 'gdrive-browser-container';
+		if (!empty($attributes['container_class'])) {
+			$classes .= ' ' . esc_attr($attributes['container_class']);
+		}
+
+		$styles = '';
+		if (!empty($attributes['max_width'])) {
+			$styles .= 'max-width:' . esc_attr($attributes['max_width']) . ';';
+		}
+
+		$html = '<div class="' . $classes . '" 
+                data-current-folder="' . esc_attr($attributes['folder_id']) . '"
+                data-root-folder="' . esc_attr($attributes['folder_id']) . '"
+                data-restrict-folder="' . esc_attr($attributes['restrict_to_folder'] ? '1' : '0') . '"';
+
+		if (!empty($styles)) {
+			$html .= ' style="' . $styles . '"';
+		}
+
+		$html .= '>';
 
 
 		// Title
