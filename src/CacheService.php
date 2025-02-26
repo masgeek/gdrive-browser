@@ -8,6 +8,7 @@ use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Cache\Adapter\MemcachedAdapter;
+use Symfony\Component\Cache\Exception\CacheException;
 use Symfony\Contracts\Cache\ItemInterface;
 
 /**
@@ -29,6 +30,8 @@ class CacheService {
 	 *
 	 * @param string $adapter Cache adapter type ('filesystem', 'array', 'redis', 'memcached')
 	 * @param array $options Adapter-specific options
+	 *
+	 * @throws CacheException
 	 */
 	public function __construct( string $adapter = 'filesystem', array $options = [] ) {
 		// Set default TTL from WordPress if available
@@ -47,6 +50,7 @@ class CacheService {
 	 * @param array $options Adapter options
 	 *
 	 * @return void
+	 * @throws CacheException
 	 */
 	private function initializeAdapter( string $adapter, array $options = [] ): void {
 		switch ( $adapter ) {
