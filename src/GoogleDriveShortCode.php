@@ -246,7 +246,7 @@ class GoogleDriveShortCode
 
     function helloWorldShortCode($atts)
     {
-        return "<p>Hello, World!</p>";
+        return "<h3>Hello, World!</h3>";
     }
 
     /**
@@ -297,14 +297,14 @@ class GoogleDriveShortCode
             return ob_get_clean();
 
         } catch (\Exception $e) {
-            return $this->renderError(__('Error: Unable to access Google Drive files.', 'google-drive-integration'));
+            return $this->renderError(__('Error: Unable to access Google Drive files.' . $e->getMessage(), 'google-drive-integration'));
         }
     }
 
     /**
      * Render browser container
      */
-    private function renderBrowserContainer($attributes, $files, $breadcrumbs, $columns)
+    private function renderBrowserContainer($attributes, $files, $breadcrumbs, $columns): string
     {
         $classes = 'gdrive-browser-container';
         if (!empty($attributes['container_class'])) {
