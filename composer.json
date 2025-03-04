@@ -46,7 +46,7 @@
     ]
   },
   "extra": {
-    "old-google/apiclient-services": [
+    "google/apiclient-services": [
       "Drive"
     ],
     "wordpress-plugin": {
