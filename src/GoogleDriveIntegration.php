@@ -200,6 +200,7 @@ class GoogleDriveIntegration
             <h3><?php _e('Shortcode Usage', 'google-drive-integration'); ?></h3>
             <p><?php _e('To display Google Drive files on any page or post, use the following shortcode:', 'google-drive-integration'); ?></p>
             <pre><code>[gdrive-browser]</code></pre>
+            <pre><code>[gdrive-browser-test]</code></pre>
 
             <p><?php _e('Optional parameters:', 'google-drive-integration'); ?></p>
             <ul>
